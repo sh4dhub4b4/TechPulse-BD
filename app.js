@@ -17,6 +17,8 @@ let currentRenderCount = 15;
 const BATCH_SIZE = 15;
 let openCommentsProductId = null;
 let openChartProductId = null;
+let openInsightsProductId = null;
+const currentInsightsTab = {};
 const chartInstances = {};
 
 // PC Build Lab State (PCPartPicker model)
@@ -95,6 +97,14 @@ function setupGlobalEventDelegation() {
       case "upvote-deal":
         handleDealUpvote(id, target);
         break;
+      case "toggle-insights":
+        toggleInsightsDrawer(id);
+        break;
+      case "switch-insights-tab": {
+        const tab = target.getAttribute("data-tab") || "chart";
+        switchInsightsTab(id, tab);
+        break;
+      }
       case "toggle-comments":
         toggleCommentsInline(id);
         break;
@@ -322,15 +332,11 @@ function setPriceComparisonMode(mode) {
 
   if (btnCash && btnCard) {
     if (mode === "CASH") {
-      btnCash.className = "py-1.5 px-2 rounded-md text-xs font-semibold text-slate-900 bg-white border border-slate-200 shadow-2xs flex items-center justify-center space-x-1.5 transition min-h-[30px]";
-      btnCard.className = "py-1.5 px-2 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 transition flex items-center justify-center space-x-1.5 min-h-[30px]";
-      btnCash.querySelector("span").className = "h-2 w-2 rounded-full bg-emerald-500 flex-shrink-0";
-      btnCard.querySelector("span").className = "h-2 w-2 rounded-full bg-slate-400 flex-shrink-0";
+      btnCash.className = "py-1 px-2 rounded-md text-xs font-semibold text-slate-900 bg-white shadow-2xs flex items-center justify-center space-x-1.5 transition";
+      btnCard.className = "py-1 px-2 rounded-md text-xs font-medium text-slate-500 hover:text-slate-900 transition flex items-center justify-center space-x-1.5";
     } else {
-      btnCard.className = "py-1.5 px-2 rounded-md text-xs font-semibold text-slate-900 bg-white border border-slate-200 shadow-2xs flex items-center justify-center space-x-1.5 transition min-h-[30px]";
-      btnCash.className = "py-1.5 px-2 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 transition flex items-center justify-center space-x-1.5 min-h-[30px]";
-      btnCard.querySelector("span").className = "h-2 w-2 rounded-full bg-slate-800 flex-shrink-0";
-      btnCash.querySelector("span").className = "h-2 w-2 rounded-full bg-slate-400 flex-shrink-0";
+      btnCard.className = "py-1 px-2 rounded-md text-xs font-semibold text-slate-900 bg-white shadow-2xs flex items-center justify-center space-x-1.5 transition";
+      btnCash.className = "py-1 px-2 rounded-md text-xs font-medium text-slate-500 hover:text-slate-900 transition flex items-center justify-center space-x-1.5";
     }
   }
 
@@ -369,9 +375,13 @@ function switchMainFeedMode(mode) {
   allNavs.forEach(({ el, m }) => {
     if (!el) return;
     if (m === mode) {
-      el.className = "px-2.5 py-1 rounded-md font-medium flex items-center space-x-1.5 transition text-white bg-slate-900 shadow-xs border border-slate-900 cursor-pointer min-h-[30px]";
+      el.className = "px-2.5 py-1 rounded-md text-xs font-semibold text-slate-900 bg-slate-100 border border-slate-200/70 shadow-2xs flex items-center space-x-1.5 transition cursor-pointer";
+      const icon = el.querySelector("i");
+      if (icon) icon.className = "w-3.5 h-3.5 text-slate-600";
     } else {
-      el.className = "px-2.5 py-1 rounded-md font-medium flex items-center space-x-1.5 transition text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 cursor-pointer min-h-[30px]";
+      el.className = "px-2.5 py-1 rounded-md text-xs font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent flex items-center space-x-1.5 transition cursor-pointer";
+      const icon = el.querySelector("i");
+      if (icon) icon.className = "w-3.5 h-3.5 text-slate-400";
     }
   });
 
@@ -424,13 +434,13 @@ function setCategoryFilter(category) {
   document.querySelectorAll(".category-tab").forEach((btn) => {
     const isTarget = btn.getAttribute("data-cat") === category;
     if (isTarget) {
-      btn.className = "category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-white bg-slate-900 border border-slate-900 font-medium cursor-pointer transition min-h-[32px]";
+      btn.className = "category-tab w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-slate-900 bg-slate-100 font-semibold cursor-pointer transition text-xs";
       const countSpan = btn.querySelector("span[id^='count-'], span#header-product-count");
-      if (countSpan) countSpan.className = "px-1.5 py-0.5 rounded bg-slate-800 text-slate-200 text-[11px] font-mono";
+      if (countSpan) countSpan.className = "text-slate-700 font-mono text-[11px]";
     } else {
-      btn.className = "category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-transparent transition cursor-pointer min-h-[32px]";
+      btn.className = "category-tab w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-normal transition cursor-pointer text-xs";
       const countSpan = btn.querySelector("span[id^='count-'], span#header-product-count");
-      if (countSpan) countSpan.className = "px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[11px] font-mono";
+      if (countSpan) countSpan.className = "text-slate-400 font-mono text-[11px]";
     }
   });
 
@@ -452,9 +462,9 @@ function applyQuickSpec(spec) {
 
   document.querySelectorAll(".spec-tag").forEach((btn) => {
     if (btn.innerText.includes(activeQuickSpec)) {
-      btn.className = "spec-tag px-2 py-0.5 rounded-md bg-slate-900 border border-slate-900 text-white font-medium text-xs shadow-2xs";
+      btn.className = "spec-tag px-1.5 py-0.5 rounded bg-slate-900 border border-slate-900 text-white font-medium text-[11px] shadow-2xs";
     } else {
-      btn.className = "spec-tag px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium transition";
+      btn.className = "spec-tag px-1.5 py-0.5 rounded bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-medium transition";
     }
   });
 
@@ -713,7 +723,7 @@ function renderHardwareFeed(reset = false) {
 
   if (filteredProducts.length === 0) {
     container.innerHTML = `
-      <div class="p-12 text-center text-slate-500 text-xs border border-dashed border-slate-200 rounded-lg bg-white">
+      <div class="col-span-full p-12 text-center text-slate-500 text-xs border border-dashed border-slate-200 rounded-xl bg-white">
         No components found matching your criteria. Try loosening the retailer filter or spec tags.
       </div>
     `;
@@ -817,7 +827,7 @@ function handleImageError(imgEl, category) {
   imgEl.src = getHardwareCategoryPlaceholder(category);
 }
 
-// Single Hardware Card (Realistic BD Retail Polish)
+// Single Hardware Card (Golden Ratio Calibrated: Proportional 2-Col Grid)
 function renderSingleCard(p) {
   const vendorTheme = getVendorTheme(p.vendor_name);
   const cashPrice = Number(p.current_price);
@@ -830,8 +840,8 @@ function renderSingleCard(p) {
 
   const isInStock = p.stock_status.toLowerCase().includes("in stock");
   const stockBadge = isInStock
-    ? `<span class="text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">In Stock</span>`
-    : `<span class="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">Out of Stock</span>`;
+    ? `<span class="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-700"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>In Stock</span>`
+    : `<span class="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-400"><span class="h-1.5 w-1.5 rounded-full bg-slate-300"></span>Out of Stock</span>`;
 
   const safeImageUrl = sanitizeUrl(p.image_url);
   const safeAffiliateUrl = buildAffiliateUrl(p.product_url, p.vendor_name);
@@ -842,7 +852,7 @@ function renderSingleCard(p) {
   // Extracted specs pills
   const specs = extractHardwareSpecs(p.title, p.category);
   const specsHtml = specs.map((s) => `
-    <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 text-xs font-medium">
+    <span class="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-medium">
       ${escapeHtml(s.label)}
     </span>
   `).join("");
@@ -851,195 +861,169 @@ function renderSingleCard(p) {
   const initialImg = safeImageUrl || placeholderSvg;
 
   return `
-    <article class="shadcn-card rounded-lg overflow-hidden transition duration-150 bg-white border border-slate-200 shadow-xs" id="card-${escapeHtml(p.id)}">
+    <article class="shadcn-card rounded-xl p-4 bg-white border border-slate-200/80 hover:border-slate-300 transition-all duration-150 flex flex-col justify-between space-y-3" id="card-${escapeHtml(p.id)}">
       
-      <!-- Card Header: Vendor, Category, Stock & Compare -->
-      <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs">
-        <div class="flex items-center space-x-2">
-          ${p.isMultiStore && p.storeVariants && p.storeVariants.length > 1
-            ? `<span class="px-2 py-0.5 rounded font-medium text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200">Best: ${escapeHtml(p.vendor_name)}</span>
-               <span class="px-2 py-0.5 rounded font-medium text-[11px] bg-sky-50 text-sky-700 border border-sky-200">${p.storeVariants.length} Stores Matched</span>`
-            : `<span class="px-2 py-0.5 rounded font-medium text-[11px] ${vendorTheme.badge}">${escapeHtml(p.vendor_name)}</span>`
-          }
-          <span class="text-slate-300">•</span>
-          <span class="text-slate-600">${escapeHtml(p.category || 'Component')}</span>
-          <span class="text-slate-300 hidden sm:inline">•</span>
-          <span class="text-slate-400 hidden sm:inline">Synced ${formatTimeAgo(p.last_scraped_at)}</span>
-        </div>
-        <div class="flex items-center space-x-3">
-          ${stockBadge}
-          <label class="flex items-center space-x-1.5 cursor-pointer text-xs text-slate-500 hover:text-slate-900 select-none py-1">
-            <input
-              type="checkbox"
-              ${isCompared ? 'checked' : ''}
-              data-action="toggle-compare"
-              data-id="${escapeHtml(p.id)}"
-              class="rounded bg-white border-slate-300 text-slate-900 focus:ring-0 cursor-pointer w-3.5 h-3.5"
+      <div>
+        <!-- Top Section: Thumbnail + Details -->
+        <div class="flex items-start gap-3.5">
+          
+          <!-- Product Thumbnail -->
+          <div class="h-18 w-18 sm:h-20 sm:w-20 bg-slate-50/70 rounded-lg border border-slate-100 flex-shrink-0 flex items-center justify-center p-2 overflow-hidden group relative">
+            <img
+              src="${initialImg}"
+              alt="${escapeHtml(p.title)}"
+              loading="lazy"
+              decoding="async"
+              referrerpolicy="no-referrer"
+              class="max-h-full max-w-full object-contain group-hover:scale-105 transition duration-150"
+              onerror="handleImageError(this, '${escapeHtml(p.category || '')}')"
             />
-            <span>Compare</span>
-          </label>
-        </div>
-      </div>
+          </div>
 
-      <!-- Card Main Body -->
-      <div class="p-4 sm:p-5 flex flex-col sm:flex-row gap-4 items-start">
-        
-        <!-- Product Thumbnail -->
-        <div class="h-24 w-24 sm:h-28 sm:w-28 bg-white rounded-md border border-slate-200 flex-shrink-0 flex items-center justify-center p-2 overflow-hidden group relative">
-          <img
-            src="${initialImg}"
-            alt="${escapeHtml(p.title)}"
-            loading="lazy"
-            decoding="async"
-            referrerpolicy="no-referrer"
-            class="max-h-full max-w-full object-contain group-hover:scale-105 transition duration-150"
-            onerror="handleImageError(this, '${escapeHtml(p.category || '')}')"
-          />
-        </div>
+          <!-- Specs & Metadata -->
+          <div class="flex-1 min-w-0">
+            
+            <!-- Store, Category & Stock Indicator -->
+            <div class="flex items-center justify-between gap-1.5 mb-1 text-xs">
+              <div class="flex items-center space-x-1.5 text-slate-500 truncate">
+                <span class="font-semibold text-slate-900 truncate">${escapeHtml(p.vendor_name)}</span>
+                <span class="text-slate-300">•</span>
+                <span class="text-slate-500 text-[11px] truncate">${escapeHtml(p.category || 'Component')}</span>
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                ${stockBadge}
+                <span class="text-slate-300">•</span>
+                <label class="flex items-center space-x-1 cursor-pointer text-[11px] text-slate-500 hover:text-slate-900 select-none py-0.5 px-1 rounded hover:bg-slate-100 transition" title="Compare with other products">
+                  <input
+                    type="checkbox"
+                    ${isCompared ? 'checked' : ''}
+                    data-action="toggle-compare"
+                    data-id="${escapeHtml(p.id)}"
+                    class="rounded bg-white border-slate-300 text-slate-900 focus:ring-0 cursor-pointer w-3 h-3"
+                  />
+                  <span class="font-medium text-[11px]">Compare</span>
+                </label>
+              </div>
+            </div>
 
-        <!-- Product Specs & Authentic Pricing Breakdown -->
-        <div class="flex-1 min-w-0 flex flex-col justify-between space-y-2.5">
-          <div>
-            <h3 class="text-sm sm:text-base font-semibold text-slate-900 hover:text-blue-600 tracking-tight leading-snug line-clamp-2 transition cursor-pointer" data-action="toggle-comments" data-id="${escapeHtml(p.id)}">
+            <!-- Product Title -->
+            <h3 class="text-xs sm:text-sm font-semibold text-slate-900 hover:text-slate-700 tracking-tight leading-snug line-clamp-2 transition cursor-pointer" data-action="toggle-insights" data-id="${escapeHtml(p.id)}">
               ${escapeHtml(p.title)}
             </h3>
-            
+
             <!-- Real Hardware Spec Badges -->
-            <div class="mt-2 flex flex-wrap items-center gap-1.5">
-              ${specsHtml}
-              <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-medium">
-                Official BD Warranty
-              </span>
-            </div>
-          </div>
-
-          <!-- Dual Price Block (Cash Discount vs Regular/EMI) with Active Pricing Mode Highlighting -->
-          <div class="pt-2 flex flex-wrap items-baseline justify-between gap-2 border-t border-slate-100">
-            <div>
-              <div class="flex items-baseline space-x-2">
-                <span class="text-xs font-medium uppercase tracking-wider ${activePriceMode === 'CASH' ? 'text-emerald-700 font-semibold' : 'text-slate-500'}">
-                  ${p.isMultiStore ? 'Best Cash Special:' : (activePriceMode === 'CASH' ? 'Cash Special:' : 'Card / POS:')}
-                </span>
-                <span class="text-xl sm:text-2xl font-bold font-mono tracking-tight text-slate-900">
-                  ৳ ${activePriceMode === 'CASH' ? formattedCashPrice : formattedRegularPrice}
-                </span>
+            ${specs.length > 0 ? `
+              <div class="mt-1.5 flex flex-wrap items-center gap-1">
+                ${specsHtml}
               </div>
-              <div class="text-xs text-slate-500 flex items-center space-x-2 mt-0.5">
-                ${activePriceMode === 'CASH'
-                  ? `<span>Regular POS: <del class="text-slate-400">৳ ${formattedRegularPrice}</del></span><span>•</span><span class="text-slate-500">EMI: ৳ ${emiPerMonth}/mo</span>`
-                  : `<span>Cash Discount: <span class="text-emerald-700 font-semibold font-mono">৳ ${formattedCashPrice}</span></span><span>•</span><span class="text-slate-500">12M EMI: ৳ ${emiPerMonth}/mo</span>`
-                }
-              </div>
-            </div>
+            ` : ''}
 
-            <div class="text-right text-xs text-slate-400 hidden sm:block">
-              <span class="block">Hub: <strong class="text-slate-700 font-medium">${escapeHtml(vendorTheme.hub)}</strong></span>
-              <span class="text-[11px] text-slate-400">Checked ${formatTimeAgo(p.last_scraped_at)}</span>
-            </div>
           </div>
         </div>
 
-      </div>
-
-      <!-- Direct Multi-Store Price Comparison Matrix Table -->
-      ${p.isMultiStore && p.storeVariants && p.storeVariants.length > 1 ? `
-        <div class="px-4 pb-4">
-          <div class="border border-slate-200 rounded-lg overflow-hidden bg-slate-50/70">
-            <div class="px-3.5 py-2 bg-slate-100/90 border-b border-slate-200 text-[11px] font-semibold text-slate-700 flex items-center justify-between">
-              <span class="flex items-center space-x-1.5">
-                <i data-lucide="scale" class="w-3.5 h-3.5 text-slate-500"></i>
-                <span>Direct Store Price Match (${p.storeVariants.length} Bangladesh Stores)</span>
-              </span>
-              ${p.maxPrice > p.minPrice ? `<span class="text-emerald-700 font-semibold text-[11px]">Save up to ৳ ${(p.maxPrice - p.minPrice).toLocaleString()}</span>` : '<span class="text-slate-400 text-[11px]">Matching Price</span>'}
+        <!-- Pricing Lockup (Calibrated Typography) -->
+        <div class="mt-3 pt-2.5 border-t border-slate-100/80 flex items-baseline justify-between gap-2">
+          <div>
+            <div class="text-[10px] uppercase tracking-wider font-semibold text-slate-400">
+              ${p.isMultiStore ? 'Lowest Price' : (activePriceMode === 'CASH' ? 'Cash Special' : 'Card / POS')}
             </div>
-            <div class="divide-y divide-slate-200/60 text-xs">
-              ${p.storeVariants.map((v, idx) => {
-                const vTheme = getVendorTheme(v.vendor_name);
+            <div class="flex items-baseline space-x-1 mt-0.5">
+              <span class="text-xs font-sans text-slate-500 font-medium">৳</span>
+              <span class="text-xl sm:text-2xl font-bold font-mono tracking-tight text-slate-900">
+                ${activePriceMode === 'CASH' ? formattedCashPrice : formattedRegularPrice}
+              </span>
+            </div>
+          </div>
+          <div class="text-right text-[11px] text-slate-400 font-mono">
+            ${activePriceMode === 'CASH'
+              ? `<div>POS: <del class="text-slate-300">৳${formattedRegularPrice}</del></div><div class="text-[10px] text-slate-400">EMI ৳${emiPerMonth}/mo</div>`
+              : `<div>Cash: ৳${formattedCashPrice}</div><div class="text-[10px] text-slate-400">EMI ৳${emiPerMonth}/mo</div>`
+            }
+          </div>
+        </div>
+
+        <!-- Direct Multi-Store Price Comparison Matrix Mini-Grid -->
+        ${p.isMultiStore && p.storeVariants && p.storeVariants.length > 1 ? `
+          <div class="mt-2.5 rounded-lg border border-slate-200/70 bg-slate-50/50 p-2 space-y-1.5">
+            <div class="flex items-center justify-between text-[11px] font-medium text-slate-600 px-0.5">
+              <span class="flex items-center gap-1">
+                <i data-lucide="scale" class="w-3.5 h-3.5 text-slate-400"></i>
+                <span>Direct Price Match (${p.storeVariants.length} BD Stores)</span>
+              </span>
+              ${p.maxPrice > p.minPrice ? `<span class="text-slate-900 font-mono text-[10px] font-semibold">Save up to ৳${(p.maxPrice - p.minPrice).toLocaleString()}</span>` : ''}
+            </div>
+            <div class="grid grid-cols-2 gap-1.5">
+              ${p.storeVariants.slice(0, 4).map((v, idx) => {
                 const vPrice = Number(v.current_price);
                 const isLowest = idx === 0;
                 const vUrl = buildAffiliateUrl(v.product_url, v.vendor_name);
                 return `
-                  <div class="px-3.5 py-2.5 flex items-center justify-between hover:bg-white transition bg-white/50">
-                    <div class="flex items-center space-x-2.5">
-                      <span class="px-2 py-0.5 rounded text-[11px] font-medium ${vTheme.badge}">${escapeHtml(v.vendor_name)}</span>
-                      ${isLowest ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">Lowest</span>' : ''}
-                      <span class="text-[11px] text-slate-500 hidden sm:inline">• ${escapeHtml(v.stock_status)}</span>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                      <span class="font-mono font-bold ${isLowest ? 'text-emerald-700' : 'text-slate-800'}">৳ ${vPrice.toLocaleString('en-US')}</span>
-                      <a
-                        href="${vUrl}"
-                        target="_blank"
-                        rel="noopener noreferrer nofollow sponsored"
-                        onclick="trackAffiliateClick('${escapeHtml(v.id)}', '${escapeHtml(v.vendor_name)}', '${vUrl}', ${v.current_price})"
-                        class="px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-medium transition shadow-2xs"
-                      >
-                        Buy at ${escapeHtml(v.vendor_name.split(' ')[0])} →
-                      </a>
-                    </div>
-                  </div>
+                  <a
+                    href="${vUrl}"
+                    target="_blank"
+                    rel="noopener noreferrer nofollow sponsored"
+                    onclick="trackAffiliateClick('${escapeHtml(v.id)}', '${escapeHtml(v.vendor_name)}', '${vUrl}', ${v.current_price})"
+                    class="flex items-center justify-between p-1.5 rounded-md bg-white border border-slate-200/80 hover:border-slate-400 transition text-[11px] group/item shadow-2xs"
+                  >
+                    <span class="truncate text-slate-700 font-medium group-hover/item:text-slate-900 mr-1">${escapeHtml(v.vendor_name.split(' ')[0])}</span>
+                    <span class="font-mono font-semibold ${isLowest ? 'text-slate-900 font-bold' : 'text-slate-600'}">৳${vPrice.toLocaleString('en-US')}</span>
+                  </a>
                 `;
               }).join("")}
             </div>
           </div>
-        </div>
-      ` : ''}
+        ` : ''}
 
-      <!-- Card Social Footer & Action Bar -->
-      <div class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 flex-wrap gap-2">
+      </div>
+
+      <!-- Card Action Bar -->
+      <div class="pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600 gap-2">
         
-        <div class="flex items-center flex-wrap gap-1.5 sm:gap-2">
+        <div class="flex items-center space-x-1">
           <!-- Deal Upvote Button -->
           <button
             data-action="upvote-deal"
             data-id="${escapeHtml(p.id)}"
-            class="px-2.5 py-1.5 rounded-md border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 flex items-center space-x-1.5 transition min-h-[32px] ${isUpvoted ? 'text-emerald-700 bg-emerald-50 border-emerald-300 font-medium' : 'text-slate-700 hover:text-slate-900 shadow-2xs'}"
+            class="px-2.5 py-1 rounded-md border border-slate-200/80 bg-white hover:bg-slate-50 flex items-center space-x-1.5 transition min-h-[28px] ${isUpvoted ? 'text-slate-900 bg-slate-100 border-slate-400 font-semibold' : 'text-slate-700 shadow-2xs'}"
+            title="Upvote Deal"
           >
-            <i data-lucide="arrow-big-up" class="w-4 h-4 pointer-events-none"></i>
-            <span class="pointer-events-none">${upvoteCount}</span>
+            <i data-lucide="arrow-big-up" class="w-3.5 h-3.5 pointer-events-none"></i>
+            <span class="pointer-events-none text-[11px] font-mono">${upvoteCount}</span>
           </button>
 
           <!-- Add to Build Lab Button -->
           <button
             data-action="add-to-build"
             data-id="${escapeHtml(p.id)}"
-            class="px-2.5 py-1.5 rounded-md border border-slate-200 hover:border-slate-300 hover:text-slate-900 bg-white hover:bg-slate-50 flex items-center space-x-1.5 transition text-slate-700 min-h-[32px] shadow-2xs"
+            class="px-2 py-1 rounded-md border border-slate-200/80 hover:border-slate-300 hover:text-slate-900 bg-white hover:bg-slate-50 flex items-center space-x-1 transition text-slate-600 text-xs min-h-[28px] shadow-2xs"
             title="Slot into PC Builder"
           >
-            <i data-lucide="wrench" class="w-3.5 h-3.5 pointer-events-none"></i>
-            <span class="pointer-events-none">+ Build</span>
+            <i data-lucide="wrench" class="w-3 h-3 text-slate-400 pointer-events-none"></i>
+            <span class="pointer-events-none text-[11px]">+ Build</span>
           </button>
 
-          <!-- Inline Reviews Toggle -->
+          <!-- Unified Insights (Trend & Reviews) Drawer Toggle -->
           <button
-            data-action="toggle-comments"
+            data-action="toggle-insights"
             data-id="${escapeHtml(p.id)}"
-            class="px-2.5 py-1.5 rounded-md border border-slate-200 hover:border-slate-300 hover:text-slate-900 bg-white hover:bg-slate-50 flex items-center space-x-1.5 transition text-slate-700 min-h-[32px] shadow-2xs"
+            class="px-2 py-1 rounded-md border border-slate-200/80 hover:border-slate-300 hover:text-slate-900 bg-white hover:bg-slate-50 flex items-center space-x-1 transition text-slate-600 text-xs min-h-[28px] shadow-2xs"
+            title="View Price Trend & Community Reviews"
           >
-            <i data-lucide="message-square" class="w-3.5 h-3.5 text-slate-500 pointer-events-none"></i>
-            <span class="pointer-events-none">Reviews</span>
-          </button>
-
-          <!-- Inline Price Graph Toggle -->
-          <button
-            data-action="toggle-chart"
-            data-id="${escapeHtml(p.id)}"
-            class="px-2.5 py-1.5 rounded-md border border-slate-200 hover:border-slate-300 hover:text-slate-900 bg-white hover:bg-slate-50 flex items-center space-x-1.5 transition text-slate-700 min-h-[32px] shadow-2xs"
-          >
-            <i data-lucide="trending-down" class="w-3.5 h-3.5 text-slate-500 pointer-events-none"></i>
-            <span class="pointer-events-none">Price Trend</span>
+            <i data-lucide="trending-down" class="w-3 h-3 text-slate-400 pointer-events-none"></i>
+            <span class="pointer-events-none text-[11px]">Insights</span>
+            <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400 pointer-events-none"></i>
           </button>
         </div>
 
         <!-- Right Buttons: Share & Outbound Affiliate Link -->
-        <div class="flex items-center space-x-2">
+        <div class="flex items-center space-x-1.5">
           <button
             data-action="copy-link"
             data-id="${escapeHtml(p.id)}"
-            class="p-2 rounded-md hover:text-slate-900 text-slate-500 hover:bg-slate-200/60 transition min-h-[32px]"
+            class="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition min-h-[28px]"
             title="Copy Direct Link"
           >
-            <i data-lucide="share-2" class="w-4 h-4 pointer-events-none"></i>
+            <i data-lucide="share-2" class="w-3.5 h-3.5 pointer-events-none"></i>
           </button>
 
           <a
@@ -1047,83 +1031,108 @@ function renderSingleCard(p) {
             target="_blank"
             rel="noopener noreferrer nofollow sponsored"
             onclick="trackAffiliateClick('${escapeHtml(p.id)}', '${escapeHtml(p.vendor_name)}', '${safeAffiliateUrl}', ${p.current_price})"
-            class="px-3.5 py-1.5 rounded-md bg-slate-900 hover:bg-slate-800 text-white font-semibold flex items-center space-x-1.5 transition text-xs shadow-xs min-h-[32px]"
+            class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white font-medium flex items-center space-x-1.5 transition text-xs shadow-xs min-h-[28px]"
           >
             <span>Visit Store</span>
-            <i data-lucide="external-link" class="w-3.5 h-3.5 text-slate-300"></i>
+            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-slate-300"></i>
           </a>
         </div>
 
       </div>
 
-      <!-- INLINE EXPANDABLE PRICE CHART DRAWER -->
-      <div id="chart-drawer-${escapeHtml(p.id)}" class="hidden border-t border-slate-200 bg-slate-50 p-4">
-        <div class="flex items-center justify-between mb-3 text-xs">
-          <span class="text-slate-800 font-medium flex items-center gap-2">
-            <i data-lucide="line-chart" class="w-4 h-4 text-slate-500"></i>
-            Verified Cash Price History (BDT)
-          </span>
-          <button data-action="toggle-chart" data-id="${escapeHtml(p.id)}" class="text-slate-500 hover:text-slate-800 text-xs px-2 py-0.5 rounded border border-slate-200 bg-white">Close</button>
-        </div>
-        <div class="h-44 w-full">
-          <canvas id="canvas-chart-${escapeHtml(p.id)}"></canvas>
-        </div>
-      </div>
-
-      <!-- INLINE EXPANDABLE REVIEWS DRAWER -->
-      <div id="comments-drawer-${escapeHtml(p.id)}" class="hidden border-t border-slate-200 bg-slate-50 p-4 space-y-3.5">
-        <div class="flex items-center justify-between text-xs">
-          <span class="text-slate-800 font-medium flex items-center gap-2">
-            <i data-lucide="messages-square" class="w-4 h-4 text-slate-500"></i>
-            Verified Community Feedback & Store Experience
-          </span>
-          <button data-action="toggle-comments" data-id="${escapeHtml(p.id)}" class="text-slate-500 hover:text-slate-800 text-xs px-2 py-0.5 rounded border border-slate-200 bg-white">Close</button>
-        </div>
-
-        <!-- Inline Review Quick Submit -->
-        <div class="p-3 bg-white border border-slate-200 rounded-md space-y-2 shadow-2xs">
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <input
-              id="inline-phone-${escapeHtml(p.id)}"
-              type="text"
-              placeholder="017XXXXXXXX"
-              value="${currentUser ? escapeHtml(currentUser.user_phone) : ''}"
-              class="bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5 text-xs text-slate-900 font-mono placeholder-slate-400 focus:outline-none focus:border-slate-400 focus:bg-white min-h-[34px]"
-            />
-            <input
-              id="inline-name-${escapeHtml(p.id)}"
-              type="text"
-              placeholder="Your Name / City"
-              value="${currentUser ? escapeHtml(currentUser.username) : ''}"
-              class="bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-400 focus:bg-white min-h-[34px]"
-            />
-            <select id="inline-rating-${escapeHtml(p.id)}" class="bg-slate-50 border border-slate-200 rounded-md px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-slate-400 focus:bg-white min-h-[34px]">
-              <option value="5">Score: 5 / 5</option>
-              <option value="4">Score: 4 / 5</option>
-              <option value="3">Score: 3 / 5</option>
-              <option value="2">Score: 2 / 5</option>
-              <option value="1">Score: 1 / 5</option>
-            </select>
-          </div>
-          <textarea
-            id="inline-text-${escapeHtml(p.id)}"
-            rows="2"
-            placeholder="Share verified build notes, backlight bleed, store service, or warranty swap feedback..."
-            class="w-full bg-slate-50 border border-slate-200 rounded-md p-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-400 focus:bg-white font-sans"
-          ></textarea>
-          <div class="flex justify-end">
+      <!-- INLINE EXPANDABLE UNIFIED INSIGHTS DRAWER -->
+      <div id="insights-drawer-${escapeHtml(p.id)}" class="hidden border-t border-slate-200 bg-slate-50/80 p-3.5 space-y-3 rounded-b-xl -mx-4 -mb-4 mt-1">
+        <!-- Insights Header with Tabs & Close -->
+        <div class="flex items-center justify-between border-b border-slate-200/80 pb-2">
+          <div class="flex items-center space-x-1 bg-slate-200/60 p-0.5 rounded-lg">
             <button
-              onclick="submitInlineReview('${escapeHtml(p.id)}')"
-              class="px-4 py-1.5 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition min-h-[32px]"
+              type="button"
+              data-action="switch-insights-tab"
+              data-tab="chart"
+              data-id="${escapeHtml(p.id)}"
+              id="tab-btn-chart-${escapeHtml(p.id)}"
+              class="px-2.5 py-1 rounded-md text-xs font-semibold bg-white text-slate-900 shadow-2xs flex items-center space-x-1.5 transition"
             >
-              Post Review
+              <i data-lucide="trending-down" class="w-3 h-3 pointer-events-none"></i>
+              <span class="pointer-events-none">Price History</span>
+            </button>
+            <button
+              type="button"
+              data-action="switch-insights-tab"
+              data-tab="reviews"
+              data-id="${escapeHtml(p.id)}"
+              id="tab-btn-reviews-${escapeHtml(p.id)}"
+              class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 flex items-center space-x-1.5 transition"
+            >
+              <i data-lucide="message-square" class="w-3 h-3 pointer-events-none"></i>
+              <span class="pointer-events-none">Buyer Reviews</span>
             </button>
           </div>
+          <button
+            data-action="toggle-insights"
+            data-id="${escapeHtml(p.id)}"
+            class="text-slate-400 hover:text-slate-700 text-xs px-2 py-0.5 rounded hover:bg-slate-200/50 transition font-medium"
+            title="Close Insights"
+          >
+            ✕ Close
+          </button>
         </div>
 
-        <!-- Product Comments Thread -->
-        <div id="comments-thread-${escapeHtml(p.id)}" class="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
-          <div class="text-xs text-slate-500 py-2">Loading reviews...</div>
+        <!-- Tab 1: Price Chart Panel -->
+        <div id="insights-chart-panel-${escapeHtml(p.id)}" class="space-y-1">
+          <div class="text-[11px] text-slate-500 font-medium">Verified Bangladesh Retail Price Trend (BDT)</div>
+          <div class="h-44 w-full">
+            <canvas id="canvas-chart-${escapeHtml(p.id)}"></canvas>
+          </div>
+        </div>
+
+        <!-- Tab 2: Reviews Panel -->
+        <div id="insights-reviews-panel-${escapeHtml(p.id)}" class="hidden space-y-3">
+          <!-- Inline Review Form -->
+          <div class="p-2.5 bg-white border border-slate-200 rounded-md space-y-2 shadow-2xs">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+              <input
+                id="inline-phone-${escapeHtml(p.id)}"
+                type="text"
+                placeholder="017XXXXXXXX"
+                value="${currentUser ? escapeHtml(currentUser.user_phone) : ''}"
+                class="bg-slate-50 border border-slate-200 rounded-md px-2.5 py-1 text-xs text-slate-900 font-mono placeholder-slate-400 focus:outline-none focus:border-slate-400 focus:bg-white min-h-[30px]"
+              />
+              <input
+                id="inline-name-${escapeHtml(p.id)}"
+                type="text"
+                placeholder="Your Name / City"
+                value="${currentUser ? escapeHtml(currentUser.username) : ''}"
+                class="bg-slate-50 border border-slate-200 rounded-md px-2.5 py-1 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-400 focus:bg-white min-h-[30px]"
+              />
+              <select id="inline-rating-${escapeHtml(p.id)}" class="bg-slate-50 border border-slate-200 rounded-md px-2 py-1 text-xs text-slate-800 focus:outline-none focus:border-slate-400 focus:bg-white min-h-[30px]">
+                <option value="5">Score: 5 / 5</option>
+                <option value="4">Score: 4 / 5</option>
+                <option value="3">Score: 3 / 5</option>
+                <option value="2">Score: 2 / 5</option>
+                <option value="1">Score: 1 / 5</option>
+              </select>
+            </div>
+            <textarea
+              id="inline-text-${escapeHtml(p.id)}"
+              rows="2"
+              placeholder="Share verified build notes, backlight bleed, store service, or warranty swap feedback..."
+              class="w-full bg-slate-50 border border-slate-200 rounded-md p-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-400 focus:bg-white font-sans"
+            ></textarea>
+            <div class="flex justify-end">
+              <button
+                onclick="submitInlineReview('${escapeHtml(p.id)}')"
+                class="px-3 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition min-h-[28px]"
+              >
+                Post Review
+              </button>
+            </div>
+          </div>
+
+          <!-- Product Comments Thread -->
+          <div id="comments-thread-${escapeHtml(p.id)}" class="space-y-2 max-h-56 overflow-y-auto custom-scrollbar">
+            <div class="text-xs text-slate-500 py-1.5">Loading reviews...</div>
+          </div>
         </div>
       </div>
 
@@ -1291,29 +1300,77 @@ function getPostTypeBadge(type) {
   }
 }
 
-// Toggle Inline Price Chart
-function togglePriceChartInline(productId) {
-  const drawer = document.getElementById(`chart-drawer-${productId}`);
+// Toggle Inline Unified Insights Drawer
+function toggleInsightsDrawer(productId, preferredTab = null) {
+  const drawer = document.getElementById(`insights-drawer-${productId}`);
   if (!drawer) return;
 
   const isHidden = drawer.classList.contains("hidden");
 
-  if (openChartProductId && openChartProductId !== productId) {
-    const prev = document.getElementById(`chart-drawer-${openChartProductId}`);
+  // Close previous drawer if different
+  if (openInsightsProductId && openInsightsProductId !== productId) {
+    const prev = document.getElementById(`insights-drawer-${openInsightsProductId}`);
     if (prev) prev.classList.add("hidden");
   }
 
   if (isHidden) {
     drawer.classList.remove("hidden");
-    openChartProductId = productId;
-    const product = allProducts.find((p) => p.id === productId);
-    if (product) renderInlineChart(product);
+    openInsightsProductId = productId;
+    const tabToOpen = preferredTab || currentInsightsTab[productId] || "chart";
+    switchInsightsTab(productId, tabToOpen);
   } else {
-    drawer.classList.add("hidden");
-    openChartProductId = null;
+    if (preferredTab && currentInsightsTab[productId] !== preferredTab) {
+      switchInsightsTab(productId, preferredTab);
+    } else {
+      drawer.classList.add("hidden");
+      openInsightsProductId = null;
+    }
   }
 
   lucide.createIcons();
+}
+
+function switchInsightsTab(productId, tab) {
+  currentInsightsTab[productId] = tab;
+  const chartBtn = document.getElementById(`tab-btn-chart-${productId}`);
+  const reviewsBtn = document.getElementById(`tab-btn-reviews-${productId}`);
+  const chartPanel = document.getElementById(`insights-chart-panel-${productId}`);
+  const reviewsPanel = document.getElementById(`insights-reviews-panel-${productId}`);
+
+  if (tab === "chart") {
+    if (chartBtn) {
+      chartBtn.className = "px-2.5 py-1 rounded-md text-xs font-semibold bg-white text-slate-900 shadow-2xs flex items-center space-x-1.5 transition";
+    }
+    if (reviewsBtn) {
+      reviewsBtn.className = "px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 flex items-center space-x-1.5 transition";
+    }
+    if (chartPanel) chartPanel.classList.remove("hidden");
+    if (reviewsPanel) reviewsPanel.classList.add("hidden");
+
+    const product = allProducts.find((p) => p.id === productId);
+    if (product) renderInlineChart(product);
+  } else {
+    if (chartBtn) {
+      chartBtn.className = "px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 flex items-center space-x-1.5 transition";
+    }
+    if (reviewsBtn) {
+      reviewsBtn.className = "px-2.5 py-1 rounded-md text-xs font-semibold bg-white text-slate-900 shadow-2xs flex items-center space-x-1.5 transition";
+    }
+    if (chartPanel) chartPanel.classList.add("hidden");
+    if (reviewsPanel) reviewsPanel.classList.remove("hidden");
+
+    loadProductComments(productId);
+  }
+  lucide.createIcons();
+}
+
+// Backwards-compatible aliases for existing callers
+function togglePriceChartInline(productId) {
+  toggleInsightsDrawer(productId, "chart");
+}
+
+function toggleCommentsInline(productId) {
+  toggleInsightsDrawer(productId, "reviews");
 }
 
 function renderInlineChart(product) {
@@ -1396,29 +1453,6 @@ function renderInlineChart(product) {
   });
 }
 
-// Toggle Inline Comments
-async function toggleCommentsInline(productId) {
-  const drawer = document.getElementById(`comments-drawer-${productId}`);
-  if (!drawer) return;
-
-  const isHidden = drawer.classList.contains("hidden");
-
-  if (openCommentsProductId && openCommentsProductId !== productId) {
-    const prev = document.getElementById(`comments-drawer-${openCommentsProductId}`);
-    if (prev) prev.classList.add("hidden");
-  }
-
-  if (isHidden) {
-    drawer.classList.remove("hidden");
-    openCommentsProductId = productId;
-    loadProductComments(productId);
-  } else {
-    drawer.classList.add("hidden");
-    openCommentsProductId = null;
-  }
-
-  lucide.createIcons();
-}
 
 async function loadProductComments(productId) {
   const thread = document.getElementById(`comments-thread-${productId}`);
@@ -2096,8 +2130,8 @@ function renderBuildLab() {
         else if (titleL.includes("am4")) socket = "AMD AM4 (Requires DDR4 & AM4 Board)";
         else if (titleL.includes("lga1700") || titleL.includes("lga 1700")) socket = "Intel LGA1700 (12th/13th/14th Gen)";
         
-        compatText.innerHTML = `<span class="text-emerald-700 font-semibold">Verified Socket:</span> ${socket}. All chosen items are in stock across verified Bangladesh stores.`;
-        compatBox.className = "p-3 rounded-md bg-emerald-50/50 border border-emerald-200 text-xs flex items-start space-x-2.5 text-slate-700";
+        compatText.innerHTML = `<span class="text-slate-900 font-semibold">Verified Socket:</span> ${socket}. All chosen items are in stock across verified Bangladesh stores.`;
+        compatBox.className = "p-2.5 rounded-md bg-slate-100/60 border border-slate-200 text-xs flex items-start space-x-2 text-slate-700";
       } else {
         compatText.innerText = "Components slotted successfully. No electrical or dimensional conflicts detected.";
         compatBox.className = "p-3 rounded-md bg-slate-50 border border-slate-200 text-xs flex items-start space-x-2.5 text-slate-700";
@@ -2131,31 +2165,31 @@ function renderPriceRadar() {
     const vendorTheme = getVendorTheme(item.vendor_name);
 
     html += `
-      <div class="shadcn-card p-4 rounded-lg space-y-2.5 shadow-2xs bg-white border border-slate-200">
+      <div class="shadcn-card p-3 rounded-md space-y-2 shadow-2xs bg-white border border-slate-200">
         <div class="flex items-center justify-between">
-          <span class="px-2 py-0.5 rounded ${vendorTheme.badge} text-xs font-medium">
+          <span class="px-1.5 py-0.5 rounded ${vendorTheme.badge} text-[11px] font-medium">
             ${escapeHtml(item.vendor_name)}
           </span>
-          <span class="text-slate-400 text-xs">Checked ${formatTimeAgo(item.last_scraped_at)}</span>
+          <span class="text-slate-400 text-[10px]">Checked ${formatTimeAgo(item.last_scraped_at)}</span>
         </div>
         <div class="font-medium text-slate-900 text-xs line-clamp-2">${escapeHtml(item.title)}</div>
-        <div class="flex items-baseline justify-between pt-2 border-t border-slate-100">
+        <div class="flex items-baseline justify-between pt-1.5 border-t border-slate-100">
           <div>
             <div class="text-[10px] text-slate-400 uppercase tracking-wider">Cash Special</div>
-            <div class="text-sm font-bold text-emerald-700 font-mono">৳ ${cash.toLocaleString()}</div>
+            <div class="text-sm font-bold text-slate-900 font-mono">৳ ${cash.toLocaleString()}</div>
           </div>
           <div class="text-right">
             <div class="text-[10px] text-slate-400 uppercase tracking-wider">Regular POS</div>
             <div class="text-xs font-mono text-slate-400"><del>৳ ${regularRef.toLocaleString()}</del></div>
           </div>
           <div class="text-right">
-            <div class="text-[10px] text-emerald-700 font-medium uppercase tracking-wider">Estimated Save</div>
-            <div class="text-xs font-semibold text-emerald-700 font-mono">৳ ${savings.toLocaleString()}</div>
+            <div class="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Estimated Save</div>
+            <div class="text-xs font-semibold text-slate-700 font-mono">৳ ${savings.toLocaleString()}</div>
           </div>
         </div>
         <div class="pt-1.5 flex items-center justify-between text-xs border-t border-slate-100">
-          <span class="text-slate-500">${escapeHtml(item.stock_status)}</span>
-          <a href="${safeAffUrl}" target="_blank" rel="noopener noreferrer" class="text-slate-700 hover:text-blue-600 flex items-center space-x-1 font-medium">
+          <span class="text-slate-500 text-[11px]">${escapeHtml(item.stock_status)}</span>
+          <a href="${safeAffUrl}" target="_blank" rel="noopener noreferrer" class="text-slate-700 hover:text-slate-900 flex items-center space-x-1 font-medium text-[11px]">
             <span>View Deal</span>
             <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-slate-400"></i>
           </a>
@@ -2185,35 +2219,17 @@ function showToast(msg) {
 // Vendor Theme Helper with Bangladeshi Market Context & Hubs
 function getVendorTheme(vendor) {
   const v = (vendor || "").toLowerCase();
-  if (v.includes("star tech")) return { 
-    badge: "bg-red-50 text-red-700 border border-red-200 font-medium",
-    borderAccent: "",
-    hub: "Elephant Rd & IDB"
-  };
-  if (v.includes("tech land")) return { 
-    badge: "bg-amber-50 text-amber-700 border border-amber-200 font-medium",
-    borderAccent: "",
-    hub: "Multiplan Level 5"
-  };
-  if (v.includes("ryans")) return { 
-    badge: "bg-sky-50 text-sky-700 border border-sky-200 font-medium",
-    borderAccent: "",
-    hub: "Kakrail & Banani"
-  };
-  if (v.includes("bdstall")) return { 
-    badge: "bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium",
-    borderAccent: "",
-    hub: "Courier 24h"
-  };
-  if (v.includes("binary logic")) return { 
-    badge: "bg-indigo-50 text-indigo-700 border border-indigo-200 font-medium",
-    borderAccent: "",
-    hub: "Computer City L4"
-  };
+  let hub = "Dhaka Retail";
+  if (v.includes("star tech")) hub = "Elephant Rd & IDB";
+  else if (v.includes("tech land")) hub = "Multiplan L5";
+  else if (v.includes("ryans")) hub = "Kakrail & Banani";
+  else if (v.includes("bdstall")) hub = "Online Marketplace";
+  else if (v.includes("binary logic")) hub = "Computer City L4";
+
   return { 
-    badge: "bg-slate-100 text-slate-700 border border-slate-200 font-medium",
+    badge: "bg-slate-100 text-slate-700 border border-slate-200/80 font-medium",
     borderAccent: "",
-    hub: "Dhaka Retail"
+    hub: hub
   };
 }
 

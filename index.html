@@ -36,94 +36,98 @@
     }
     .shadcn-card {
       background-color: #ffffff;
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+      border: 1px solid #e8edf2;
+      box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.03), 0 1px 2px -1px rgba(15, 23, 42, 0.02);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
     .shadcn-card:hover {
       border-color: #cbd5e1;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 6px 16px -2px rgba(15, 23, 42, 0.05), 0 2px 4px -1px rgba(15, 23, 42, 0.02);
     }
   </style>
 </head>
 <body class="min-h-screen flex flex-col font-sans selection:bg-slate-200 selection:text-slate-900 bg-slate-50 text-slate-900">
 
-  <!-- MAIN TOPBAR NAVIGATION (COMPACT & MINIMAL) -->
-  <header class="border-b border-slate-200 bg-white/95 sticky top-0 z-40 backdrop-blur">
-    <div class="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 flex items-center justify-between gap-4 py-2">
+  <!-- MAIN TOPBAR NAVIGATION (ULTRA-PREMIUM LINEAR/VERCEL STYLE) -->
+  <header class="border-b border-slate-200/80 bg-white/95 sticky top-0 z-40 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 py-2.5">
       
-      <!-- Brand & Direct Navigation Tabs -->
-      <div class="flex items-center space-x-3.5 flex-shrink-0">
+      <!-- Brand & Navigation -->
+      <div class="flex items-center space-x-5 flex-shrink-0">
         <!-- Brand Logo -->
         <a
           href="javascript:void(0)"
           onclick="switchMainFeedMode('HARDWARE'); window.scrollTo({top:0, behavior:'smooth'});"
-          class="flex items-center space-x-2 group cursor-pointer"
+          class="flex items-center space-x-2.5 group cursor-pointer"
           title="TechPulse BD"
         >
-          <div class="h-7 w-7 rounded-md bg-slate-900 text-white flex items-center justify-center font-mono font-bold text-xs shadow-xs">
+          <div class="h-6 w-6 rounded-md bg-slate-900 text-white flex items-center justify-center font-mono font-bold text-[11px] shadow-xs">
             TP
           </div>
-          <span class="text-sm font-bold tracking-tight text-slate-900 group-hover:text-blue-600 transition">TechPulse BD</span>
+          <div class="flex flex-col">
+            <span class="text-xs sm:text-sm font-semibold tracking-tight text-slate-900 group-hover:text-slate-600 transition leading-none">TechPulse BD</span>
+            <span class="text-[9px] text-slate-400 font-medium tracking-wide uppercase mt-0.5 hidden sm:block">Hardware Intelligence</span>
+          </div>
         </a>
 
-        <!-- Header Nav Mode Switcher: 4-Room Architecture -->
-        <nav class="flex items-center space-x-1 bg-slate-100 border border-slate-200 p-0.5 rounded-lg text-xs font-medium">
+        <!-- Header Nav Mode Switcher: Understated Ghost Tabs -->
+        <nav class="flex items-center space-x-1 text-xs">
           <button
             id="header-nav-catalog"
             onclick="switchMainFeedMode('CATALOG')"
-            class="px-2.5 py-1 rounded-md font-medium flex items-center space-x-1.5 transition text-white bg-slate-900 shadow-xs border border-slate-900 cursor-pointer min-h-[30px]"
+            class="px-2.5 py-1 rounded-md text-xs font-semibold text-slate-900 bg-slate-100 border border-slate-200/70 shadow-2xs flex items-center space-x-1.5 transition cursor-pointer"
             title="Browse Hardware Catalog & Specifications"
           >
-            <i data-lucide="layers" class="w-3.5 h-3.5 text-slate-300"></i>
+            <i data-lucide="layers" class="w-3.5 h-3.5 text-slate-600"></i>
             <span class="hidden md:inline">Catalog</span>
           </button>
           <button
             id="header-nav-builder"
             onclick="switchMainFeedMode('BUILD_LAB')"
-            class="px-2.5 py-1 rounded-md font-medium flex items-center space-x-1.5 transition text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 cursor-pointer min-h-[30px]"
+            class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent flex items-center space-x-1.5 transition cursor-pointer"
             title="Interactive PC Build Lab with Socket Compatibility"
           >
-            <i data-lucide="wrench" class="w-3.5 h-3.5 text-slate-500"></i>
+            <i data-lucide="wrench" class="w-3.5 h-3.5 text-slate-400"></i>
             <span class="hidden md:inline">Build Lab</span>
-            <span id="nav-build-count" class="hidden px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-mono font-semibold border border-emerald-200">0</span>
+            <span id="nav-build-count" class="hidden px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 text-[10px] font-mono font-medium">0</span>
           </button>
           <button
             id="header-nav-radar"
             onclick="switchMainFeedMode('PRICE_RADAR')"
-            class="px-2.5 py-1 rounded-md font-medium flex items-center space-x-1.5 transition text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 cursor-pointer min-h-[30px]"
+            class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent flex items-center space-x-1.5 transition cursor-pointer"
             title="Market Price Alerts & Drops"
           >
-            <i data-lucide="activity" class="w-3.5 h-3.5 text-slate-500"></i>
+            <i data-lucide="activity" class="w-3.5 h-3.5 text-slate-400"></i>
             <span class="hidden md:inline">Price Radar</span>
           </button>
           <button
             id="header-nav-community"
             onclick="switchMainFeedMode('COMMUNITY')"
-            class="px-2.5 py-1 rounded-md font-medium flex items-center space-x-1.5 transition text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 cursor-pointer min-h-[30px]"
+            class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent flex items-center space-x-1.5 transition cursor-pointer"
             title="Community Discussions & Deal Alerts"
           >
-            <i data-lucide="messages-square" class="w-3.5 h-3.5 text-slate-500"></i>
+            <i data-lucide="messages-square" class="w-3.5 h-3.5 text-slate-400"></i>
             <span class="hidden md:inline">Community</span>
-            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+            <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
           </button>
         </nav>
       </div>
 
       <!-- Real-time Hardware Search Input -->
-      <div class="flex-1 max-w-lg relative">
-        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+      <div class="flex-1 max-w-sm relative">
+        <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
           <i data-lucide="search" class="w-3.5 h-3.5"></i>
         </div>
         <input
           id="global-search"
           type="text"
           aria-label="Search PC hardware components across Bangladesh retailers"
-          placeholder="Search components: 'Redmi G27Q', 'Samsung 980 Pro', 'Ryzen 7600'..."
-          class="w-full pl-9 pr-8 py-1.5 bg-slate-100 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition"
+          placeholder="Search components: 'Ryzen 7600', '980 Pro'..."
+          class="w-full pl-8 pr-8 py-1.5 bg-slate-50/70 border border-slate-200/80 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition shadow-2xs"
           oninput="handleSearch()"
         />
-        <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-slate-400 font-mono text-[10px]">
-          <kbd class="px-1.5 py-0.5 border border-slate-200 rounded bg-white text-slate-500 text-[10px]">⌘K</kbd>
+        <div class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-slate-400 font-mono text-[10px]">
+          <kbd class="px-1.5 py-0.5 border border-slate-200/80 rounded bg-white text-slate-400 text-[9px] shadow-2xs">⌘K</kbd>
         </div>
       </div>
 
@@ -131,8 +135,8 @@
       <div class="flex items-center space-x-2 text-xs">
         <!-- Social User Auth Pill / Button -->
         <div id="user-auth-section">
-          <button onclick="openAuthModal()" class="px-3 py-1.5 rounded-md bg-white hover:bg-slate-50 text-slate-700 font-medium border border-slate-200 transition flex items-center space-x-1.5 shadow-2xs min-h-[32px]">
-            <i data-lucide="user-plus" class="w-3.5 h-3.5 text-slate-500"></i>
+          <button onclick="openAuthModal()" class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white font-medium border border-transparent transition flex items-center space-x-1.5 shadow-2xs min-h-[30px]">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5 text-slate-300"></i>
             <span>Sign In</span>
           </button>
         </div>
@@ -141,8 +145,8 @@
     </div>
   </header>
 
-  <!-- MAIN 2-COLUMN LAYOUT: LEFT FILTER RAIL (PCPartPicker/Geizhals) & RIGHT FEED -->
-  <main class="flex-1 w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 py-4">
+  <!-- MAIN 2-COLUMN LAYOUT: LEFT FILTER RAIL & RIGHT FEED -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5">
     
     <!-- Mobile Filter Toggle Bar (< lg screens) -->
     <div class="lg:hidden flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg mb-4 shadow-2xs">
@@ -162,350 +166,354 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
       
-      <!-- LEFT COLUMN: FILTER RAIL -->
-      <aside id="filter-sidebar" class="hidden lg:block lg:col-span-4 xl:col-span-3 2xl:col-span-2 space-y-3 sticky top-16 max-h-[calc(100vh-4.5rem)] overflow-y-auto custom-scrollbar pr-1 pb-6">
+      <!-- LEFT COLUMN: UNIFIED FILTER RAIL -->
+      <aside id="filter-sidebar" class="hidden lg:block lg:col-span-4 xl:col-span-3 sticky top-16 max-h-[calc(100vh-5rem)] overflow-y-auto custom-scrollbar pr-1 pb-4">
         
-        <!-- Main Filter Card -->
-        <div class="bg-white border border-slate-200 rounded-lg p-3.5 space-y-3 shadow-2xs">
+        <!-- Single Unified Rail Card -->
+        <div class="bg-white border border-slate-200/80 rounded-xl p-3.5 space-y-3.5 shadow-2xs divide-y divide-slate-100">
           
-          <!-- Filter Header with Reset -->
-          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
-            <div class="flex items-center space-x-2 text-xs font-semibold text-slate-900">
-              <i data-lucide="sliders" class="w-4 h-4 text-slate-600"></i>
-              <span>Filters & Specs</span>
+          <!-- Header with Reset & Active Profile -->
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-1.5 text-xs font-semibold text-slate-900">
+                <i data-lucide="sliders" class="w-3.5 h-3.5 text-slate-600"></i>
+                <span>Filter Hardware</span>
+              </div>
+              <button
+                onclick="resetAllFilters()"
+                class="text-[11px] font-medium text-slate-400 hover:text-slate-800 transition hover:underline"
+                title="Reset all filters"
+              >
+                Reset
+              </button>
             </div>
-            <button
-              onclick="resetAllFilters()"
-              class="text-[11px] font-medium text-slate-500 hover:text-slate-900 transition hover:underline"
-              title="Reset all filters"
-            >
-              Reset All
-            </button>
+
+            <!-- Active User Profile Status Widget (if signed in) -->
+            <div id="sidebar-user-card" class="hidden pt-2 border-t border-slate-100">
+              <div class="flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-100">
+                <div class="flex items-center space-x-2">
+                  <div id="sidebar-user-avatar" class="h-6 w-6 rounded-full bg-slate-900 text-white font-semibold flex items-center justify-center text-[10px] font-mono shadow-2xs">
+                    U
+                  </div>
+                  <div>
+                    <div id="sidebar-user-name" class="text-xs font-semibold text-slate-900 cursor-pointer hover:underline truncate max-w-[100px]" onclick="openUserProfileModal(currentUser.username)">@Username</div>
+                  </div>
+                </div>
+                <div id="sidebar-user-rep" class="text-[10px] font-bold font-mono text-slate-900">25 PTS</div>
+              </div>
+            </div>
           </div>
 
           <!-- Section 1: Bangladesh Pricing Mode Switcher -->
-          <div class="space-y-1.5">
+          <div class="pt-3 space-y-1.5">
             <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Pricing Model</div>
-            <div class="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
+            <div class="grid grid-cols-2 gap-1 bg-slate-100/80 p-0.5 rounded-lg border border-slate-200/60">
               <button
                 id="price-mode-cash"
                 onclick="setPriceComparisonMode('CASH')"
-                class="py-1.5 px-2 rounded-md text-xs font-semibold text-slate-900 bg-white border border-slate-200 shadow-2xs flex items-center justify-center space-x-1.5 transition min-h-[30px]"
+                class="py-1 px-2 rounded-md text-xs font-semibold text-slate-900 bg-white shadow-2xs flex items-center justify-center space-x-1.5 transition"
                 title="Sort & Display by Cash Special Price (Bank / bKash / Cash discount)"
               >
-                <span class="h-2 w-2 rounded-full bg-emerald-500 flex-shrink-0"></span>
-                <span class="truncate">Cash Special</span>
+                <span>Cash Special</span>
               </button>
               <button
                 id="price-mode-card"
                 onclick="setPriceComparisonMode('CARD')"
-                class="py-1.5 px-2 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 transition flex items-center justify-center space-x-1.5 min-h-[30px]"
+                class="py-1 px-2 rounded-md text-xs font-medium text-slate-500 hover:text-slate-900 transition flex items-center justify-center space-x-1.5"
                 title="Sort & Display by Regular Card POS / EMI Price"
               >
-                <span class="h-2 w-2 rounded-full bg-slate-400 flex-shrink-0"></span>
-                <span class="truncate">Card / EMI</span>
+                <span>Card / EMI</span>
               </button>
             </div>
           </div>
 
           <!-- Section 2: Hardware Categories (Vertical Rail) -->
-          <div class="space-y-1 pt-2 border-t border-slate-100">
+          <div class="pt-3 space-y-0.5">
             <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Category</div>
-            <div id="category-pills-row" class="flex flex-col space-y-1 text-xs text-slate-600">
-              <button onclick="setCategoryFilter('ALL')" class="category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-white bg-slate-900 border border-slate-900 font-medium cursor-pointer transition min-h-[32px]" data-cat="ALL">
+            <div id="category-pills-row" class="flex flex-col space-y-0.5 text-xs text-slate-600">
+              <button onclick="setCategoryFilter('ALL')" class="category-tab w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-slate-900 bg-slate-100 font-semibold cursor-pointer transition text-xs" data-cat="ALL">
                 <span>All Components</span>
-                <span id="header-product-count" class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-200 text-[11px] font-mono">--</span>
+                <span id="header-product-count" class="text-slate-700 font-mono text-[11px]">--</span>
               </button>
-              <button onclick="setCategoryFilter('Processor')" class="category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-transparent transition cursor-pointer min-h-[32px]" data-cat="Processor">
+              <button onclick="setCategoryFilter('Processor')" class="category-tab w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-normal transition cursor-pointer text-xs" data-cat="Processor">
                 <span>Processors</span>
-                <span id="count-processors" class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[11px] font-mono">--</span>
+                <span id="count-processors" class="text-slate-400 font-mono text-[11px]">--</span>
               </button>
-              <button onclick="setCategoryFilter('Monitor')" class="category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-transparent transition cursor-pointer min-h-[32px]" data-cat="Monitor">
+              <button onclick="setCategoryFilter('Monitor')" class="category-tab w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-normal transition cursor-pointer text-xs" data-cat="Monitor">
                 <span>Monitors</span>
-                <span id="count-monitors" class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[11px] font-mono">--</span>
+                <span id="count-monitors" class="text-slate-400 font-mono text-[11px]">--</span>
               </button>
-              <button onclick="setCategoryFilter('SSD')" class="category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-transparent transition cursor-pointer min-h-[32px]" data-cat="SSD">
+              <button onclick="setCategoryFilter('SSD')" class="category-tab w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-normal transition cursor-pointer text-xs" data-cat="SSD">
                 <span>SSDs & NVMe</span>
-                <span id="count-ssds" class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[11px] font-mono">--</span>
+                <span id="count-ssds" class="text-slate-400 font-mono text-[11px]">--</span>
               </button>
-              <button onclick="setCategoryFilter('Laptop')" class="category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-transparent transition cursor-pointer min-h-[32px]" data-cat="Laptop">
+              <button onclick="setCategoryFilter('Laptop')" class="category-tab w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-normal transition cursor-pointer text-xs" data-cat="Laptop">
                 <span>Laptops</span>
-                <span id="count-laptops" class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[11px] font-mono">--</span>
+                <span id="count-laptops" class="text-slate-400 font-mono text-[11px]">--</span>
               </button>
-              <button onclick="setCategoryFilter('Keyboard')" class="category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-transparent transition cursor-pointer min-h-[32px]" data-cat="Keyboard">
+              <button onclick="setCategoryFilter('Keyboard')" class="category-tab w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-normal transition cursor-pointer text-xs" data-cat="Keyboard">
                 <span>Keyboards</span>
-                <span id="count-keyboards" class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[11px] font-mono">--</span>
+                <span id="count-keyboards" class="text-slate-400 font-mono text-[11px]">--</span>
               </button>
-              <button onclick="setCategoryFilter('Mouse')" class="category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-transparent transition cursor-pointer min-h-[32px]" data-cat="Mouse">
+              <button onclick="setCategoryFilter('Mouse')" class="category-tab w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-normal transition cursor-pointer text-xs" data-cat="Mouse">
                 <span>Mice</span>
-                <span id="count-mice" class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[11px] font-mono">--</span>
+                <span id="count-mice" class="text-slate-400 font-mono text-[11px]">--</span>
               </button>
             </div>
           </div>
 
           <!-- Section 3: Availability & Retailers -->
-          <div class="space-y-2 pt-2 border-t border-slate-100 text-xs">
+          <div class="pt-3 space-y-2 text-xs">
             <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Availability & Retailer</div>
             
-            <!-- Multi-Store Comparison Grouping Toggle -->
-            <label class="flex items-center space-x-2 cursor-pointer text-slate-700 hover:text-slate-900 select-none py-1.5 px-2 rounded-md hover:bg-slate-50 border border-slate-200 transition" title="Compare identical components across multiple stores side-by-side">
-              <input
-                type="checkbox"
-                id="feed-group-multistore"
-                checked
-                onchange="applyFilters()"
-                class="rounded bg-white border-slate-300 text-slate-900 focus:ring-0 cursor-pointer w-3.5 h-3.5"
-              />
-              <span class="font-medium text-slate-700 text-xs">Multi-Store Price Match</span>
-            </label>
+            <!-- Compact 2-Pill Availability Row -->
+            <div class="grid grid-cols-2 gap-1.5">
+              <label class="flex items-center space-x-1.5 cursor-pointer text-slate-600 hover:text-slate-900 select-none py-1 px-2 rounded-md hover:bg-slate-50 border border-slate-200/80 transition text-xs" title="Compare identical components across multiple stores">
+                <input
+                  type="checkbox"
+                  id="feed-group-multistore"
+                  checked
+                  onchange="applyFilters()"
+                  class="rounded border-slate-300 text-slate-900 focus:ring-0 cursor-pointer w-3.5 h-3.5"
+                />
+                <span class="font-medium text-slate-700 truncate text-[11px]">Match</span>
+              </label>
 
-            <!-- In-Stock Filter Checkbox -->
-            <label class="flex items-center space-x-2 cursor-pointer text-slate-700 hover:text-slate-900 select-none py-1.5 px-2 rounded-md hover:bg-slate-50 border border-slate-200 transition">
-              <input
-                type="checkbox"
-                id="feed-in-stock-only"
-                onchange="applyFilters()"
-                class="rounded bg-white border-slate-300 text-slate-900 focus:ring-0 cursor-pointer w-3.5 h-3.5"
-              />
-              <span class="font-medium text-slate-700 text-xs">In Stock Only</span>
-            </label>
-
-            <!-- Retailer Select -->
-            <div class="space-y-1">
-              <label class="text-[11px] text-slate-500">Retailer:</label>
-              <select id="feed-vendor-filter" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-md px-2 py-1.5 text-slate-800 text-xs focus:bg-white focus:outline-none focus:border-slate-400 min-h-[32px]">
-                <option value="ALL">All Stores (Star Tech, Tech Land, Ryans...)</option>
-                <option value="Star Tech">Star Tech</option>
-                <option value="Tech Land">Tech Land</option>
-                <option value="Ryans">Ryans</option>
-                <option value="PC House BD">PC House BD</option>
-                <option value="Computer Village">Computer Village</option>
-                <option value="Potaka IT">Potaka IT</option>
-                <option value="UCC">UCC</option>
-                <option value="BDstall">BDstall</option>
-                <option value="Binary Logic">Binary Logic</option>
-              </select>
+              <label class="flex items-center space-x-1.5 cursor-pointer text-slate-600 hover:text-slate-900 select-none py-1 px-2 rounded-md hover:bg-slate-50 border border-slate-200/80 transition text-xs" title="Show only items currently in stock">
+                <input
+                  type="checkbox"
+                  id="feed-in-stock-only"
+                  onchange="applyFilters()"
+                  class="rounded border-slate-300 text-slate-900 focus:ring-0 cursor-pointer w-3.5 h-3.5"
+                />
+                <span class="font-medium text-slate-700 truncate text-[11px]">In Stock</span>
+              </label>
             </div>
 
-            <!-- Sort Select -->
-            <div class="space-y-1">
-              <label class="text-[11px] text-slate-500">Sort By:</label>
-              <select id="feed-sort-filter" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-md px-2 py-1.5 text-slate-800 text-xs focus:bg-white focus:outline-none focus:border-slate-400 min-h-[32px]">
-                <option value="NEWEST">Recently Crawled</option>
-                <option value="PRICE_ASC">Price: Low to High</option>
-                <option value="PRICE_DESC">Price: High to Low</option>
-              </select>
+            <!-- Compact 2-Column Retailer & Sort Select Grid -->
+            <div class="grid grid-cols-2 gap-1.5">
+              <div class="space-y-0.5">
+                <label class="text-[10px] text-slate-400 block font-medium">Retailer</label>
+                <select id="feed-vendor-filter" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-md px-1.5 py-1 text-slate-700 text-xs focus:bg-white focus:outline-none focus:border-slate-400 min-h-[28px] truncate">
+                  <option value="ALL">All Stores</option>
+                  <option value="Star Tech">Star Tech</option>
+                  <option value="Tech Land">Tech Land</option>
+                  <option value="Ryans">Ryans</option>
+                  <option value="PC House BD">PC House BD</option>
+                  <option value="Computer Village">Computer Village</option>
+                  <option value="Potaka IT">Potaka IT</option>
+                  <option value="UCC">UCC</option>
+                  <option value="BDstall">BDstall</option>
+                  <option value="Binary Logic">Binary Logic</option>
+                </select>
+              </div>
+
+              <div class="space-y-0.5">
+                <label class="text-[10px] text-slate-400 block font-medium">Sort By</label>
+                <select id="feed-sort-filter" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-md px-1.5 py-1 text-slate-700 text-xs focus:bg-white focus:outline-none focus:border-slate-400 min-h-[28px] truncate">
+                  <option value="NEWEST">Recent</option>
+                  <option value="PRICE_ASC">৳ Low-High</option>
+                  <option value="PRICE_DESC">৳ High-Low</option>
+                </select>
+              </div>
             </div>
           </div>
 
           <!-- Section 4: Parametric Quick Specs -->
-          <div id="spec-filters-block" class="space-y-1.5 pt-2 border-t border-slate-100 text-xs spec-filter-section">
+          <div id="spec-filters-block" class="pt-3 space-y-1.5 text-xs spec-filter-section">
             <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Quick Spec Filters</div>
             <div class="flex items-center flex-wrap gap-1" id="spec-filter-pills">
-              <button onclick="applyQuickSpec('AM5')" class="spec-tag px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium transition">
+              <button onclick="applyQuickSpec('AM5')" class="spec-tag px-1.5 py-0.5 rounded bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-medium transition">
                 AM5
               </button>
-              <button onclick="applyQuickSpec('LGA1700')" class="spec-tag px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium transition">
+              <button onclick="applyQuickSpec('LGA1700')" class="spec-tag px-1.5 py-0.5 rounded bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-medium transition">
                 LGA1700
               </button>
-              <button onclick="applyQuickSpec('144Hz+')" class="spec-tag px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium transition">
+              <button onclick="applyQuickSpec('144Hz+')" class="spec-tag px-1.5 py-0.5 rounded bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-medium transition">
                 144Hz+
               </button>
-              <button onclick="applyQuickSpec('IPS')" class="spec-tag px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium transition">
+              <button onclick="applyQuickSpec('IPS')" class="spec-tag px-1.5 py-0.5 rounded bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-medium transition">
                 IPS/OLED
               </button>
-              <button onclick="applyQuickSpec('1TB')" class="spec-tag px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium transition">
-                1TB+ NVMe
+              <button onclick="applyQuickSpec('1TB')" class="spec-tag px-1.5 py-0.5 rounded bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-medium transition">
+                1TB NVMe
               </button>
-              <button onclick="applyQuickSpec('Gen4')" class="spec-tag px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium transition">
+              <button onclick="applyQuickSpec('Gen4')" class="spec-tag px-1.5 py-0.5 rounded bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-medium transition">
                 PCIe 4.0
               </button>
-              <button onclick="applyQuickSpec('Mechanical')" class="spec-tag px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium transition">
+              <button onclick="applyQuickSpec('Mechanical')" class="spec-tag px-1.5 py-0.5 rounded bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-medium transition">
                 Mechanical
               </button>
-              <button onclick="applyQuickSpec('Wireless')" class="spec-tag px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium transition">
+              <button onclick="applyQuickSpec('Wireless')" class="spec-tag px-1.5 py-0.5 rounded bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-medium transition">
                 Wireless
               </button>
             </div>
           </div>
 
-        </div>
-
-        <!-- Sidebar User Card & Live Chatter -->
-        <div class="space-y-3">
-          <!-- Active User Profile Status Widget -->
-          <div id="sidebar-user-card" class="hidden bg-white border border-slate-200 rounded-lg p-3.5 space-y-2.5 shadow-2xs">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-2.5">
-                <div id="sidebar-user-avatar" class="h-8 w-8 rounded-full bg-slate-900 text-white font-semibold flex items-center justify-center text-xs font-mono shadow-xs">
-                  U
-                </div>
-                <div>
-                  <div id="sidebar-user-name" class="text-xs font-semibold text-slate-900 cursor-pointer hover:underline" onclick="openUserProfileModal(currentUser.username)">@Username</div>
-                  <div id="sidebar-user-phone" class="text-[11px] text-slate-500 font-mono">017••••5678</div>
-                </div>
-              </div>
-              <div class="text-right">
-                <div class="text-[10px] text-slate-400 uppercase tracking-wider">Rep</div>
-                <div id="sidebar-user-rep" class="text-xs font-bold font-mono text-emerald-700">25 PTS</div>
-              </div>
+          <!-- Section 5: Retail Hubs & Verified Reviews Link -->
+          <div class="pt-3 border-t border-slate-100 space-y-1.5 text-xs">
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-slate-500 font-medium">Buyer Feedback:</span>
+              <button
+                onclick="openReviewModal()"
+                class="text-[11px] text-slate-800 hover:text-slate-900 font-semibold underline underline-offset-2 transition"
+                title="Write a verified store review"
+              >
+                + Write Review
+              </button>
+            </div>
+            <div class="text-[10px] text-slate-400 flex items-center justify-between">
+              <span>Covered Hubs:</span>
+              <span class="text-slate-700 font-medium">Elephant Rd • Multiplan • IDB</span>
             </div>
           </div>
 
-          <!-- Live Community Reviews Card -->
-          <div class="bg-white border border-slate-200 rounded-lg p-3.5 space-y-2.5 shadow-2xs">
+        </div>
+      </aside>
+
+      <!-- RIGHT COLUMN: MAIN CONTENT CANVAS -->
+      <section class="lg:col-span-8 xl:col-span-9 2xl:col-span-10 space-y-2.5">
+        
+        <!-- SOCIAL POST COMPOSER & RECENT STORE REVIEWS (Active on Community Mode) -->
+        <div id="community-post-composer" class="hidden space-y-3">
+          <div class="bg-white border border-slate-200 rounded-md p-4 shadow-2xs space-y-2.5">
+            <div class="flex items-center space-x-2 text-xs font-semibold text-slate-900 border-b border-slate-200 pb-2">
+              <i data-lucide="edit-3" class="w-3.5 h-3.5 text-slate-700"></i>
+              <span>Create a Tech Discussion or Deal Alert</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <input
+                id="post-title-input"
+                type="text"
+                placeholder="Topic title (e.g. Best 27-inch 144Hz monitor in BD?)"
+                class="sm:col-span-2 bg-slate-50 border border-slate-200 rounded-md px-2.5 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-slate-400"
+              />
+              <select id="post-type-select" class="bg-slate-50 border border-slate-200 rounded-md px-2 py-1.5 text-xs text-slate-700 focus:bg-white focus:outline-none focus:border-slate-400">
+                <option value="Discussion">Discussion</option>
+                <option value="Deal Alert">Deal Alert</option>
+                <option value="Build Help">Build Help</option>
+                <option value="Question">Question</option>
+              </select>
+            </div>
+            <textarea
+              id="post-content-input"
+              rows="2"
+              placeholder="Share your experience with Bangladeshi stores, warranty claims, thermals, or ask advice from local builders..."
+              class="w-full bg-slate-50 border border-slate-200 rounded-md p-2.5 text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-slate-400 font-sans"
+            ></textarea>
+            <div class="flex items-center justify-between pt-0.5">
+              <span class="text-[10px] text-slate-400">Verified BD Mobile identity prevents seller bot spam</span>
+              <button
+                onclick="submitCommunityPost()"
+                class="px-3 py-1.5 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium transition flex items-center space-x-1 shadow-2xs"
+              >
+                <span>Publish</span>
+                <i data-lucide="send" class="w-3 h-3"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Live Buyer Feedback & Store Reviews Ticker Grid -->
+          <div class="bg-white border border-slate-200 rounded-md p-4 shadow-2xs space-y-2.5">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2">
               <span class="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
-                <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-                Live Buyer Feedback
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                Recent Buyer Feedback & Store Reviews
               </span>
               <button
                 onclick="openReviewModal()"
-                class="text-[11px] text-emerald-700 hover:text-emerald-800 font-medium flex items-center space-x-1"
+                class="px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium transition flex items-center space-x-1 shadow-2xs"
                 title="Write a verified store review"
               >
                 <span>+ Write Review</span>
               </button>
             </div>
-
-            <div id="live-reviews-ticker" class="space-y-2 max-h-[220px] overflow-y-auto custom-scrollbar pr-0.5">
-              <div class="text-xs text-slate-400 py-2">Streaming community reviews...</div>
+            <div id="live-reviews-ticker" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
+              <div class="text-[11px] text-slate-400 py-1">Streaming reviews...</div>
             </div>
-          </div>
-
-          <!-- Retail Hubs Info -->
-          <div class="p-3 bg-slate-100/70 border border-slate-200 rounded-lg text-[11px] text-slate-500 space-y-1">
-            <div class="font-medium text-slate-700 flex items-center justify-between">
-              <span>Covered Hubs:</span>
-              <span class="text-emerald-700 font-mono">10 BD Retailers</span>
-            </div>
-            <div>Elephant Rd, Multiplan, IDB Bhaban, Uttara, Agrabad CTG</div>
-          </div>
-        </div>
-
-      </aside>
-
-      <!-- RIGHT COLUMN: MAIN CONTENT CANVAS -->
-      <section class="lg:col-span-8 xl:col-span-9 2xl:col-span-10 space-y-3.5">
-        
-        <!-- SOCIAL POST COMPOSER (Active on Community Mode) -->
-        <div id="community-post-composer" class="hidden bg-white border border-slate-200 rounded-lg p-5 shadow-xs space-y-3">
-          <div class="flex items-center space-x-2 text-xs font-semibold text-slate-900 border-b border-slate-200 pb-2.5">
-            <i data-lucide="edit-3" class="w-4 h-4 text-emerald-600"></i>
-            <span>Create a Tech Discussion or Deal Alert</span>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <input
-              id="post-title-input"
-              type="text"
-              placeholder="Topic title (e.g. Best 27-inch 144Hz monitor in BD right now?)"
-              class="sm:col-span-2 bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-slate-400"
-            />
-            <select id="post-type-select" class="bg-slate-50 border border-slate-200 rounded-md px-2.5 py-2 text-xs text-slate-700 focus:bg-white focus:outline-none focus:border-slate-400">
-              <option value="Discussion">Discussion</option>
-              <option value="Deal Alert">Deal Alert</option>
-              <option value="Build Help">Build Help</option>
-              <option value="Question">Question</option>
-            </select>
-          </div>
-          <textarea
-            id="post-content-input"
-            rows="3"
-            placeholder="Share your experience with Bangladeshi stores, warranty claims, thermals, or ask advice from local builders..."
-            class="w-full bg-slate-50 border border-slate-200 rounded-md p-3 text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-slate-400 font-sans"
-          ></textarea>
-          <div class="flex items-center justify-between pt-1">
-            <span class="text-[11px] text-slate-500">Verified BD Mobile identity prevents seller bot spam</span>
-            <button
-              onclick="submitCommunityPost()"
-              class="px-4 py-2 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition flex items-center space-x-1.5 shadow"
-            >
-              <span>Publish Thread</span>
-              <i data-lucide="send" class="w-3.5 h-3.5"></i>
-            </button>
           </div>
         </div>
 
         <!-- BUILD LAB INTERACTIVE WORKSPACE (PCPartPicker Style) -->
-        <div id="build-lab-view" class="hidden space-y-4">
-          <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-200 pb-3 flex-wrap gap-2">
-              <div class="flex items-center space-x-3">
-                <div class="h-8 w-8 rounded-md bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center">
-                  <i data-lucide="wrench" class="w-4 h-4"></i>
+        <div id="build-lab-view" class="hidden space-y-3">
+          <div class="bg-white border border-slate-200 rounded-md p-4 shadow-2xs space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-2.5 flex-wrap gap-2">
+              <div class="flex items-center space-x-2.5">
+                <div class="h-7 w-7 rounded-md bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center">
+                  <i data-lucide="wrench" class="w-3.5 h-3.5"></i>
                 </div>
                 <div>
-                  <h2 class="text-sm font-semibold text-slate-900 tracking-tight">Custom PC Build Lab</h2>
-                  <p class="text-xs text-slate-500">Assemble compatible components with live Bangladesh store totals</p>
+                  <h2 class="text-xs font-semibold text-slate-900 tracking-tight">Custom PC Build Lab</h2>
+                  <p class="text-[11px] text-slate-400">Assemble components with live store totals</p>
                 </div>
               </div>
-              <div class="flex items-center space-x-3">
+              <div class="flex items-center space-x-2.5">
                 <div class="text-right">
-                  <div class="text-[10px] text-slate-500 uppercase tracking-wider">Estimated Total Cost</div>
-                  <div id="build-lab-total-price" class="text-base font-bold text-emerald-700 font-mono">৳ 0</div>
+                  <div class="text-[9px] text-slate-400 uppercase tracking-wider">Total Cost</div>
+                  <div id="build-lab-total-price" class="text-sm font-bold text-slate-900 font-mono">৳ 0</div>
                 </div>
-                <button onclick="clearCurrentBuild()" class="px-2.5 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs border border-slate-200 transition" title="Clear build list">
+                <button onclick="clearCurrentBuild()" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs border border-slate-200 transition" title="Clear build list">
                   Clear
                 </button>
-                <button onclick="copyBuildSummary()" class="px-2.5 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs border border-slate-200 transition flex items-center space-x-1" title="Copy build specs for forum or sharing">
-                  <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+                <button onclick="copyBuildSummary()" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs border border-slate-200 transition flex items-center space-x-1" title="Copy build specs for forum or sharing">
+                  <i data-lucide="share-2" class="w-3 h-3"></i>
                   <span>Share</span>
                 </button>
               </div>
             </div>
 
             <!-- Socket Compatibility Notice Inspector -->
-            <div id="build-compatibility-box" class="p-3 rounded-md bg-slate-50 border border-slate-200 text-xs flex items-start space-x-2.5">
-              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+            <div id="build-compatibility-box" class="p-2.5 rounded-md bg-slate-50 border border-slate-200 text-xs flex items-start space-x-2">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-slate-600 flex-shrink-0 mt-0.5"></i>
               <div>
-                <span class="font-semibold text-slate-800">Compatibility Inspector:</span>
-                <span id="build-compatibility-text" class="text-slate-600 ml-1">No hardware conflicts detected. Start selecting parts.</span>
+                <span class="font-semibold text-slate-800">Compatibility:</span>
+                <span id="build-compatibility-text" class="text-slate-600 ml-1">No hardware conflicts detected.</span>
               </div>
             </div>
 
             <!-- Build Component Slot Rows -->
-            <div id="build-lab-slots" class="space-y-2 text-xs">
+            <div id="build-lab-slots" class="space-y-1.5 text-xs">
               <!-- Rendered dynamically by app.js -->
             </div>
           </div>
         </div>
 
         <!-- PRICE RADAR MARKET INTELLIGENCE VIEW (Idealo Style) -->
-        <div id="price-radar-view" class="hidden space-y-4">
-          <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-200 pb-3 flex-wrap gap-2">
-              <div class="flex items-center space-x-3">
-                <div class="h-8 w-8 rounded-md bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center">
-                  <i data-lucide="activity" class="w-4 h-4"></i>
+        <div id="price-radar-view" class="hidden space-y-3">
+          <div class="bg-white border border-slate-200 rounded-md p-4 shadow-2xs space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-2.5 flex-wrap gap-2">
+              <div class="flex items-center space-x-2.5">
+                <div class="h-7 w-7 rounded-md bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center">
+                  <i data-lucide="activity" class="w-3.5 h-3.5"></i>
                 </div>
                 <div>
-                  <h2 class="text-sm font-semibold text-slate-900 tracking-tight">Bangladesh Price Radar</h2>
-                  <p class="text-xs text-slate-500">Real-time dealer margins, deal dips & retailer discrepancies</p>
+                  <h2 class="text-xs font-semibold text-slate-900 tracking-tight">Bangladesh Price Radar</h2>
+                  <p class="text-[11px] text-slate-400">Real-time dealer margins & price drops</p>
                 </div>
               </div>
-              <div class="text-xs text-slate-600">
-                Tracking <span class="text-slate-900 font-semibold font-mono">8,600+</span> items across 10 BD stores
+              <div class="text-[11px] text-slate-500">
+                Tracking <span class="text-slate-900 font-semibold font-mono">8,600+</span> items
               </div>
             </div>
 
             <!-- Price Drop Radar Items -->
-            <div id="price-radar-items" class="space-y-3">
+            <div id="price-radar-items" class="space-y-2">
               <!-- Rendered dynamically by app.js -->
             </div>
           </div>
         </div>
 
-        <!-- The Main Feed Container -->
-        <div id="hardware-feed" class="space-y-3">
-          <div class="p-12 text-center text-slate-500 text-xs border border-dashed border-slate-200 rounded-lg bg-white">
+        <!-- The Main Feed Container (Proportional 2-Column Responsive Grid) -->
+        <div id="hardware-feed" class="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
+          <div class="col-span-full p-8 text-center text-slate-500 text-xs border border-dashed border-slate-200 rounded-xl bg-white">
             <i data-lucide="loader-2" class="w-4 h-4 mx-auto animate-spin mb-2 text-slate-400"></i>
             Loading live hardware catalog...
           </div>
         </div>
 
         <!-- Lazy Load Trigger / Load More Button -->
-        <div id="lazy-sentinel" class="py-6 text-center">
-          <button id="btn-load-more" onclick="loadMoreProducts()" class="px-5 py-2.5 rounded-md bg-white hover:bg-slate-50 text-xs font-medium border border-slate-200 hover:border-slate-300 text-slate-700 transition shadow-sm min-h-[40px]">
+        <div id="lazy-sentinel" class="py-4 text-center">
+          <button id="btn-load-more" onclick="loadMoreProducts()" class="px-4 py-2 rounded-md bg-white hover:bg-slate-50 text-xs font-medium border border-slate-200 hover:border-slate-300 text-slate-700 transition shadow-2xs min-h-[34px]">
             Load More Products ↓
           </button>
         </div>
@@ -520,7 +528,7 @@
     <div class="bg-white border border-slate-200 rounded-lg max-w-lg w-full p-6 space-y-4 shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-200 pb-3">
         <div class="flex items-center space-x-2">
-          <div class="h-6 w-6 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center text-xs font-bold font-mono">
+          <div class="h-6 w-6 rounded bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center text-xs font-bold font-mono">
             BD
           </div>
           <h3 class="text-sm font-semibold text-slate-900">Post Hardware Experience</h3>
@@ -594,17 +602,17 @@
   </div>
 
   <!-- FLOATING SIDE-BY-SIDE HARDWARE COMPARISON BAR -->
-  <div id="comparison-sticky-bar" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 z-40 bg-white/95 border border-slate-300 rounded-lg px-4 py-2.5 shadow-xl backdrop-blur hidden flex items-center space-x-4">
-    <div class="flex items-center space-x-2 text-xs">
-      <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+  <div id="comparison-sticky-bar" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 z-40 bg-white/95 border border-slate-300 rounded-md px-3.5 py-2 shadow-lg backdrop-blur hidden flex items-center space-x-3">
+    <div class="flex items-center space-x-1.5 text-xs">
+      <span class="h-1.5 w-1.5 rounded-full bg-slate-900"></span>
       <span class="text-slate-900 font-semibold">Compare:</span>
-      <span id="compare-tray-count" class="text-slate-700 font-mono">0 / 3 items</span>
+      <span id="compare-tray-count" class="text-slate-600 font-mono text-[11px]">0 / 3 items</span>
     </div>
-    <div class="flex items-center space-x-2">
-      <button onclick="openComparisonModal()" class="px-3 py-1.5 rounded-md bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs transition min-h-[34px]">
-        Compare Selected →
+    <div class="flex items-center space-x-1.5">
+      <button onclick="openComparisonModal()" class="px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs transition min-h-[28px]">
+        Compare →
       </button>
-      <button onclick="clearComparisonTray()" class="text-slate-500 hover:text-slate-800 text-xs p-1">
+      <button onclick="clearComparisonTray()" class="text-slate-400 hover:text-slate-800 text-xs px-1">
         Clear
       </button>
     </div>
@@ -637,7 +645,7 @@
           </div>
           <div>
             <div id="modal-profile-username" class="text-sm font-semibold text-slate-900">@Username</div>
-            <div id="modal-profile-badge" class="text-[11px] text-emerald-700 font-medium">Verified Member</div>
+            <div id="modal-profile-badge" class="text-[11px] text-slate-500 font-medium">Verified Member</div>
           </div>
         </div>
         <button onclick="closeUserProfileModal()" class="text-slate-600 hover:text-slate-900 text-xs px-2.5 py-1 rounded-md border border-slate-200 bg-slate-100 min-h-[32px]">Close</button>
@@ -651,7 +659,7 @@
         <div class="grid grid-cols-2 gap-3 pt-2">
           <div class="p-3 bg-slate-50 rounded-md border border-slate-200">
             <span class="text-slate-500 text-[10px] block uppercase tracking-wider font-semibold">Reputation</span>
-            <span id="modal-profile-rep" class="text-sm font-bold text-emerald-700 font-mono">25 PTS</span>
+            <span id="modal-profile-rep" class="text-sm font-bold text-slate-900 font-mono">25 PTS</span>
           </div>
           <div class="p-3 bg-slate-50 rounded-md border border-slate-200">
             <span class="text-slate-500 text-[10px] block uppercase tracking-wider font-semibold">Verified Phone</span>
@@ -727,8 +735,8 @@
   </div>
 
   <!-- TOAST NOTIFICATION -->
-  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-16 opacity-0 transition duration-200 bg-slate-900 border border-slate-800 text-white text-xs px-4 py-3 rounded-lg shadow-2xl flex items-center space-x-2.5">
-    <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-16 opacity-0 transition duration-200 bg-slate-900 border border-slate-800 text-white text-xs px-3.5 py-2.5 rounded-md shadow-xl flex items-center space-x-2">
+    <i data-lucide="check" class="w-3.5 h-3.5 text-slate-300"></i>
     <span id="toast-message">Notification</span>
   </div>
 
