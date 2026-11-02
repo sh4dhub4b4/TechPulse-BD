@@ -19,7 +19,7 @@ on:
       max_pages:
         description: 'Maximum pages per store'
         required: false
-        default: '2'
+        default: '10'
 
 concurrency:
   group: techpulse-scraper
