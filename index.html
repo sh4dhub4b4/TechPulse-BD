@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.min.css">
+  <link rel="stylesheet" href="style.min.css?v=20261103">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -431,29 +431,29 @@
             <div id="live-reviews-ticker" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
               <div class="text-[11px] text-slate-400 py-1">Streaming reviews...</div>
             </div>
+          </div>
+        </div>
 
-            <!-- Live Hardware Pulse Analytics Grid -->
-            <div id="hardware-pulse-analytics" class="grid grid-cols-2 md:grid-cols-4 gap-2">
-              <div class="bg-white border border-slate-200/80 p-3 rounded-md shadow-2xs space-y-1">
-                <div class="text-[10px] text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                  <span>Active Builders Online</span>
-                </div>
-                <div id="pulse-active-users" class="text-base font-mono font-bold text-slate-900">—</div>
-              </div>
-              <div class="bg-white border border-slate-200/80 p-3 rounded-md shadow-2xs space-y-1">
-                <div class="text-[10px] text-slate-400 uppercase tracking-wider">Monitored Hardware</div>
-                <div id="pulse-total-skus" class="text-base font-mono font-bold text-slate-900">—</div>
-              </div>
-              <div class="bg-white border border-slate-200/80 p-3 rounded-md shadow-2xs space-y-1">
-                <div class="text-[10px] text-slate-400 uppercase tracking-wider">Price Updates (24h)</div>
-                <div id="pulse-updated-24h" class="text-base font-mono font-bold text-slate-900">—</div>
-              </div>
-              <div class="bg-white border border-slate-200/80 p-3 rounded-md shadow-2xs space-y-1">
-                <div class="text-[10px] text-slate-400 uppercase tracking-wider">Feedback Activity (Past 1h)</div>
-                <div id="pulse-velocity-1h" class="text-base font-mono font-bold text-slate-900">—</div>
-              </div>
+        <!-- Live Hardware Pulse Analytics Grid (Always visible across all modes below reviews) -->
+        <div id="hardware-pulse-analytics" class="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div class="bg-white border border-slate-200/80 p-3 rounded-md shadow-2xs space-y-1">
+            <div class="text-[10px] text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+              <span>Active Builders Online</span>
             </div>
+            <div id="pulse-active-users" class="text-base font-mono font-bold text-slate-900">—</div>
+          </div>
+          <div class="bg-white border border-slate-200/80 p-3 rounded-md shadow-2xs space-y-1">
+            <div class="text-[10px] text-slate-400 uppercase tracking-wider">Monitored Hardware</div>
+            <div id="pulse-total-skus" class="text-base font-mono font-bold text-slate-900">—</div>
+          </div>
+          <div class="bg-white border border-slate-200/80 p-3 rounded-md shadow-2xs space-y-1">
+            <div class="text-[10px] text-slate-400 uppercase tracking-wider">Price Updates (24h)</div>
+            <div id="pulse-updated-24h" class="text-base font-mono font-bold text-slate-900">—</div>
+          </div>
+          <div class="bg-white border border-slate-200/80 p-3 rounded-md shadow-2xs space-y-1">
+            <div class="text-[10px] text-slate-400 uppercase tracking-wider">Feedback Activity (Past 1h)</div>
+            <div id="pulse-velocity-1h" class="text-base font-mono font-bold text-slate-900">—</div>
           </div>
         </div>
 
@@ -849,6 +849,7 @@
     <span id="toast-message">Notification</span>
   </div>
 
-  <script src="app.js"></script>
+  <!-- Version query busts stale caches; bump it whenever app.js changes. -->
+  <script src="app.js?v=20261103"></script>
 </body>
 </html>
