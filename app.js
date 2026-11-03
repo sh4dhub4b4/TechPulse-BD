@@ -21,16 +21,22 @@ let openInsightsProductId = null;
 const currentInsightsTab = {};
 const chartInstances = {};
 
-// PC Build Lab State (PCPartPicker model)
+// PC Build Lab State (PCPartPicker model with LocalStorage Persistence)
+const savedBuildSlots = JSON.parse(localStorage.getItem("tp_build_slots") || "{}");
 const buildLabSlots = {
-  Processor: null,
-  Motherboard: null,
-  RAM: null,
-  Storage: null,
-  GPU: null,
-  PowerSupply: null,
-  Monitor: null,
+  Processor: savedBuildSlots.Processor || null,
+  Storage: savedBuildSlots.Storage || null,
+  Monitor: savedBuildSlots.Monitor || null,
+  Keyboard: savedBuildSlots.Keyboard || null,
+  Mouse: savedBuildSlots.Mouse || null,
+  Laptop: savedBuildSlots.Laptop || null,
 };
+
+function saveBuildLabToStorage() {
+  try {
+    localStorage.setItem("tp_build_slots", JSON.stringify(buildLabSlots));
+  } catch (e) {}
+}
 
 // Hardware Comparison Tray State (Max 3)
 const comparisonTray = new Map();
@@ -55,6 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupKeyboardShortcuts();
   setupInfiniteScrollObserver();
   updateUserUI();
+  updateBuildNavCount();
   fetchOutboundStats();
   handleUrlDeepLink();
 
@@ -329,18 +336,18 @@ function resetAllFilters() {
   document.querySelectorAll(".category-tab").forEach((btn) => {
     const isAll = btn.getAttribute("data-cat") === "ALL";
     if (isAll) {
-      btn.className = "category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-white bg-slate-900 border border-slate-900 font-medium cursor-pointer transition min-h-[32px]";
+      btn.className = "category-tab w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-slate-900 bg-slate-100 font-semibold cursor-pointer transition text-xs";
       const countSpan = btn.querySelector("span[id^='count-'], span#header-product-count");
-      if (countSpan) countSpan.className = "px-1.5 py-0.5 rounded bg-slate-800 text-slate-200 text-[11px] font-mono";
+      if (countSpan) countSpan.className = "text-slate-700 font-mono text-[11px]";
     } else {
-      btn.className = "category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-transparent transition cursor-pointer min-h-[32px]";
+      btn.className = "category-tab w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-normal transition cursor-pointer text-xs";
       const countSpan = btn.querySelector("span[id^='count-'], span#header-product-count");
-      if (countSpan) countSpan.className = "px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[11px] font-mono";
+      if (countSpan) countSpan.className = "text-slate-400 font-mono text-[11px]";
     }
   });
 
   document.querySelectorAll(".spec-tag").forEach((btn) => {
-    btn.className = "spec-tag px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium transition";
+    btn.className = "spec-tag px-1.5 py-0.5 rounded bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-medium transition";
   });
 
   const mobileStatus = document.getElementById("mobile-filter-status");
@@ -2032,6 +2039,7 @@ function handleAddToBuild(productId) {
   }
 
   buildLabSlots[slot] = item;
+  saveBuildLabToStorage();
   updateBuildNavCount();
   showToast(`Added to Build: [${slot}] ${item.title.substring(0, 32)}...`);
   if (activeFeedMode === "BUILD_LAB") {
@@ -2042,6 +2050,7 @@ function handleAddToBuild(productId) {
 function handleRemoveFromBuild(slotKey) {
   if (buildLabSlots[slotKey]) {
     delete buildLabSlots[slotKey];
+    saveBuildLabToStorage();
     updateBuildNavCount();
     showToast(`Removed from Build: ${slotKey}`);
     renderBuildLab();
@@ -2052,6 +2061,7 @@ function clearCurrentBuild() {
   for (const k in buildLabSlots) {
     buildLabSlots[k] = null;
   }
+  saveBuildLabToStorage();
   updateBuildNavCount();
   showToast("Build Lab cleared");
   renderBuildLab();
