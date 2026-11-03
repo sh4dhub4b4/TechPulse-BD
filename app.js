@@ -63,6 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateUserUI();
   updateBuildNavCount();
   fetchOutboundStats();
+  initHardwarePulse();
   handleUrlDeepLink();
 
   // URL Hash handling (#community vs #catalog vs #build-lab vs #price-radar)
@@ -172,7 +173,7 @@ function setModalScrollLock(isLocked) {
     document.body.classList.add("overflow-hidden");
   } else {
     // Only remove lock if all dialog modals are closed
-    const openModals = document.querySelectorAll("#review-modal:not(.hidden), #comparison-modal:not(.hidden), #profile-modal:not(.hidden), #auth-modal:not(.hidden)");
+    const openModals = document.querySelectorAll("#review-modal:not(.hidden), #comparison-modal:not(.hidden), #profile-modal:not(.hidden), #auth-modal:not(.hidden), #hardware-chat-modal:not(.hidden)");
     if (openModals.length === 0) {
       document.body.classList.remove("overflow-hidden");
     }
@@ -191,6 +192,7 @@ function setupKeyboardShortcuts() {
       closeUserProfileModal();
       closeComparisonModal();
       closeReviewModal();
+      closeHardwareChat();
     }
   });
 }
@@ -1744,6 +1746,384 @@ async function fetchLiveRecentReviews() {
   } catch (err) {
     console.error("Error loading recent reviews:", err);
   }
+}
+
+// Live Hardware Pulse: metrics RPC + Realtime presence
+let pulsePresenceChannel = null;
+let pulseRefreshTimer = null;
+let pulseLifecycleBound = false;
+
+function initHardwarePulse() {
+  teardownHardwarePulse();
+  fetchHardwarePulseMetrics();
+  pulseRefreshTimer = setInterval(fetchHardwarePulseMetrics, 60000);
+
+  if (!pulseLifecycleBound) {
+    pulseLifecycleBound = true;
+    window.addEventListener("pagehide", teardownHardwarePulse);
+  }
+
+  const sessionId =
+    sessionStorage.getItem("tp_pulse_session") ||
+    (crypto.randomUUID ? crypto.randomUUID() : `anon-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  sessionStorage.setItem("tp_pulse_session", sessionId);
+
+  pulsePresenceChannel = sb.channel("pulse-presence", {
+    config: { presence: { key: sessionId } },
+  });
+
+  pulsePresenceChannel
+    .on("presence", { event: "sync" }, () => {
+      setPulseMetric("pulse-active-users", Object.keys(pulsePresenceChannel.presenceState()).length);
+    })
+    .subscribe(async (status) => {
+      if (status === "SUBSCRIBED") {
+        await pulsePresenceChannel.track({ online_at: new Date().toISOString() });
+      }
+    });
+}
+
+function teardownHardwarePulse() {
+  if (pulseRefreshTimer) {
+    clearInterval(pulseRefreshTimer);
+    pulseRefreshTimer = null;
+  }
+  if (pulsePresenceChannel) {
+    if (typeof sb.removeChannel === "function") sb.removeChannel(pulsePresenceChannel);
+    else if (typeof pulsePresenceChannel.unsubscribe === "function") pulsePresenceChannel.unsubscribe();
+    pulsePresenceChannel = null;
+  }
+}
+
+function parseHardwarePulseMetrics(data) {
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) return null;
+
+  const toCount = (value) => {
+    const count = Number(value);
+    return Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
+  };
+
+  return {
+    total_products: toCount(row.total_products),
+    updated_today: toCount(row.updated_today),
+    feedback_last_hour: toCount(row.feedback_last_hour),
+  };
+}
+
+async function fetchHardwarePulseMetrics() {
+  try {
+    const { data, error } = await sb.rpc("get_hardware_pulse_metrics");
+    if (error) throw error;
+
+    const metrics = parseHardwarePulseMetrics(data);
+    if (!metrics) return;
+
+    setPulseMetric("pulse-total-skus", metrics.total_products);
+    setPulseMetric("pulse-updated-24h", metrics.updated_today);
+    setPulseMetric("pulse-velocity-1h", metrics.feedback_last_hour);
+  } catch (err) {
+    console.error("Error loading hardware pulse metrics:", err);
+  }
+}
+
+function setPulseMetric(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.innerText = Number(value || 0).toLocaleString();
+}
+
+// ==========================================
+// STATELESS HARDWARE ADVISOR CHATBOT
+// ==========================================
+const HARDWARE_ASSISTANT_FUNCTION = "hardware-assistant";
+const CHATBOT_HISTORY_MESSAGES = 4; // last 2 query-reply turns
+const chatbotConversation = []; // in-memory only, never persisted
+let chatBusy = false;
+
+const CHATBOT_SYSTEM_PROMPT = `You are TechPulse BD's hardware advisor for the Bangladeshi PC market.
+Pricing conventions:
+- All prices are in BDT (৳).
+- "Cash" is the discounted listed price; "Card/POS" is typically about 7% higher.
+- Physical hubs: Elephant Road (Star Tech, Ryans), IDB Bhaban (Star Tech), and Multiplan Center (Tech Land).
+- Never invent prices or stock. Use only the supplied TechPulse catalog context; if data is missing, say so.
+Compatibility rules:
+- AM5 requires DDR5 memory.
+- AM4 requires DDR4 memory.
+- LGA1700 supports DDR4 or DDR5 depending on the specific motherboard.
+Answer concisely, cite vendor and cash price when recommending parts, and ask at most one clarifying question.`;
+
+const CHATBOT_SOCKET_RULES = {
+  AM5: "DDR5 memory only.",
+  AM4: "DDR4 memory only.",
+  LGA1700: "DDR4 or DDR5, depending on the motherboard.",
+};
+
+const CHATBOT_STOP_WORDS = new Set(
+  "a an and are as at be best build builds budget by can card cash component components computer could do does find for from give good handle i in is it me my need of on or pc please pos price prices recommend recommendation should show taka the tk to top under up vs versus want what which will with within without bd bangladesh dhaka bdt".split(" ")
+);
+
+function toggleHardwareChat() {
+  const modal = document.getElementById("hardware-chat-modal");
+  if (!modal) return;
+  if (modal.classList.contains("hidden")) openHardwareChat();
+  else closeHardwareChat();
+}
+
+function openHardwareChat() {
+  const modal = document.getElementById("hardware-chat-modal");
+  if (!modal) return;
+  modal.classList.remove("hidden");
+  setModalScrollLock(true);
+  lucide.createIcons();
+  setTimeout(() => document.getElementById("chat-input")?.focus(), 50);
+}
+
+function closeHardwareChat() {
+  const modal = document.getElementById("hardware-chat-modal");
+  if (!modal) return;
+  modal.classList.add("hidden");
+  setModalScrollLock(false);
+}
+
+function sendChatPreset(prompt) {
+  if (chatBusy) return;
+  const input = document.getElementById("chat-input");
+  if (!input) return;
+  input.value = prompt;
+  document.getElementById("chat-form")?.requestSubmit();
+}
+
+async function handleChatSubmit(event) {
+  if (event) event.preventDefault();
+  const input = document.getElementById("chat-input");
+  if (!input || chatBusy) return;
+
+  const query = input.value.trim();
+  if (!query) return;
+
+  input.value = "";
+  await askHardwareAdvisor(query);
+}
+
+async function askHardwareAdvisor(query) {
+  const history = chatbotConversation.slice(-CHATBOT_HISTORY_MESSAGES).map((turn) => ({
+    role: turn.role,
+    content: turn.content,
+  }));
+
+  chatbotConversation.push({ role: "user", content: query });
+  renderChatMessage("user", query);
+  setChatBusy(true);
+
+  const loadingBubble = renderChatMessage("assistant", "Checking the live catalog...");
+  let reply;
+
+  try {
+    reply = await requestRemoteAdvisor(query, history);
+  } catch (err) {
+    reply = buildLocalAdvisorReply(query);
+  }
+
+  loadingBubble.remove();
+  chatbotConversation.push({ role: "assistant", content: reply });
+  renderChatMessage("assistant", reply);
+  setChatBusy(false);
+  document.getElementById("chat-input")?.focus();
+}
+
+async function requestRemoteAdvisor(query, history) {
+  const { data, error } = await sb.functions.invoke(HARDWARE_ASSISTANT_FUNCTION, {
+    body: {
+      query,
+      context: buildChatContext(),
+      messages: [
+        { role: "system", content: CHATBOT_SYSTEM_PROMPT },
+        ...history,
+        { role: "user", content: query },
+      ],
+    },
+  });
+
+  if (error) throw error;
+
+  const reply = typeof data === "string" ? data : data?.reply;
+  if (!reply || typeof reply !== "string") throw new Error("Advisor unavailable");
+  return reply.trim();
+}
+
+function buildChatContext() {
+  const searchInput = document.getElementById("global-search");
+
+  return {
+    activeCategory,
+    searchKeyword: searchInput ? searchInput.value.trim() : "",
+    priceMode: activePriceMode,
+    buildLab: Object.entries(buildLabSlots)
+      .filter(([, item]) => Boolean(item))
+      .map(([slot, item]) => ({
+        slot,
+        title: item.title,
+        vendor: item.vendor_name,
+        cashPrice: Number(item.current_price),
+      })),
+  };
+}
+
+function renderChatMessage(role, text) {
+  const container = document.getElementById("chat-messages-container");
+  if (!container) return document.createElement("div");
+
+  const row = document.createElement("div");
+  row.className = role === "user" ? "flex justify-end" : "flex justify-start";
+
+  const bubble = document.createElement("div");
+  bubble.className =
+    role === "user"
+      ? "max-w-[85%] rounded-lg bg-slate-900 text-white px-3 py-2 leading-relaxed whitespace-pre-line"
+      : "max-w-[85%] rounded-lg bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 leading-relaxed whitespace-pre-line";
+  bubble.textContent = text;
+
+  row.appendChild(bubble);
+  container.appendChild(row);
+  container.scrollTop = container.scrollHeight;
+  return row;
+}
+
+function setChatBusy(isBusy) {
+  chatBusy = isBusy;
+  const input = document.getElementById("chat-input");
+  const button = document.getElementById("btn-chat-send");
+  if (input) input.disabled = isBusy;
+  if (button) button.disabled = isBusy;
+}
+
+function detectChatSocket(text) {
+  if (/\bam5\b/i.test(text)) return "AM5";
+  if (/\bam4\b/i.test(text)) return "AM4";
+  if (/\blga\s*1700\b/i.test(text)) return "LGA1700";
+  return null;
+}
+
+function inferProductSocket(title) {
+  const t = (title || "").toLowerCase();
+  if (/\bam5\b/.test(t)) return "AM5";
+  if (/\bam4\b/.test(t)) return "AM4";
+  if (/\blga\s*1700\b/.test(t)) return "LGA1700";
+  if (/\bryzen\s*[789]\s*\d{3}/.test(t)) return "AM5";
+  if (/\bryzen\s*[1-5]\s*\d{3}/.test(t)) return "AM4";
+  if (/\b(i[3579]|intel\s+core).{0,24}\b1[2-4]\d{2}\b/.test(t)) return "LGA1700";
+  return null;
+}
+
+function parseChatBudget(text) {
+  const match =
+    text.match(/(?:under|below|within|up\s*to|upto|max(?:imum)?|budget(?:\s*of)?)\s*৳?\s*(\d[\d,]*(?:\.\d+)?)\s*(k|thousand|lakh)?/i) ||
+    text.match(/\b(\d[\d,]*(?:\.\d+)?)\s*(k|thousand|lakh)\b/i);
+  if (!match) return null;
+
+  const raw = Number(match[1].replace(/,/g, ""));
+  if (!Number.isFinite(raw) || raw <= 0) return null;
+
+  const unit = (match[2] || "").toLowerCase();
+  const amount = Math.round(raw * (unit === "lakh" ? 100000 : unit ? 1000 : 1));
+  return amount <= 1000000 ? amount : null;
+}
+
+function extractChatKeywords(text) {
+  const tokens = text
+    .toLowerCase()
+    .replace(/[^a-z0-9.\-\s]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+
+  return [...new Set(tokens)].filter((token) => token.length >= 2 && !CHATBOT_STOP_WORDS.has(token));
+}
+
+function scoreChatProduct(product, keywords, socket) {
+  const title = (product.title || "").toLowerCase();
+  const category = (product.category || "").toLowerCase();
+  const vendor = (product.vendor_name || "").toLowerCase();
+
+  let score = 0;
+  for (const keyword of keywords) {
+    if (title.includes(keyword)) score += 3;
+    else if (category.includes(keyword)) score += 1;
+    else if (vendor.includes(keyword)) score += 1;
+  }
+  if (socket && inferProductSocket(product.title) === socket) score += 5;
+  return score;
+}
+
+function findChatProducts(query) {
+  if (!allProducts.length) return [];
+
+  const keywords = extractChatKeywords(query);
+  const socket = detectChatSocket(query);
+  if (!keywords.length && !socket) return [];
+
+  const budget = parseChatBudget(query);
+  const pool = allProducts.filter((p) => !budget || Number(p.current_price) <= budget);
+  const modelTokens = keywords.filter(
+    (token) => /\d/.test(token) && token.length >= 3 && !/^\d+k$/.test(token) && !/^(am[45]|lga\d+|ddr[45])$/.test(token)
+  );
+
+  let ranked = pool
+    .map((product) => ({ product, score: scoreChatProduct(product, keywords, socket) }))
+    .filter((entry) => entry.score > 0);
+
+  // When a model number is present, keep only SKUs that actually carry that model.
+  if (modelTokens.length) {
+    ranked = ranked.filter(({ product }) => {
+      const title = (product.title || "").toLowerCase();
+      return modelTokens.some((token) => title.includes(token));
+    });
+  }
+
+  // Budget-only queries fall back to the cheapest in-budget SKUs.
+  if (!ranked.length && !modelTokens.length && budget) {
+    ranked = pool.map((product) => ({ product, score: 0 }));
+  }
+
+  ranked.sort((a, b) => b.score - a.score || Number(a.product.current_price) - Number(b.product.current_price));
+
+  // Keep only the strongest relevance tier so vendor-name noise can't outrank the requested part.
+  if (ranked.length) {
+    const bestScore = ranked[0].score;
+    ranked = ranked.filter((entry) => entry.score >= Math.max(1, Math.ceil(bestScore / 2)));
+  }
+
+  return ranked.slice(0, 3).map((entry) => entry.product);
+}
+
+function buildLocalAdvisorReply(query) {
+  const socket = detectChatSocket(query);
+  const ram = (query.match(/\bddr[45]\b/i) || [])[0]?.toUpperCase() || null;
+  const budget = parseChatBudget(query);
+  const products = findChatProducts(query);
+  const lines = [];
+
+  if (socket) {
+    lines.push(`${socket} memory rule: ${CHATBOT_SOCKET_RULES[socket]}`);
+    if (socket === "AM5" && ram === "DDR4") lines.push("Compatibility: DDR4 will not work on AM5.");
+    else if (socket === "AM4" && ram === "DDR5") lines.push("Compatibility: DDR5 will not work on AM4.");
+    else if (socket === "LGA1700" && ram) lines.push(`Compatibility: ${ram} works only if the chosen LGA1700 motherboard supports it.`);
+  }
+
+  if (budget) lines.push(`Cash budget ceiling: ৳${budget.toLocaleString("en-US")}.`);
+
+  if (products.length) {
+    lines.push("Top cash bargains in the current catalog:");
+    products.forEach((p) => {
+      lines.push(`• ${p.vendor_name} — ${p.title} — ৳${Number(p.current_price).toLocaleString("en-US")}`);
+    });
+  } else {
+    lines.push(
+      `No matching SKUs in the current catalog snapshot${budget ? ` under ৳${budget.toLocaleString("en-US")}` : ""}. Try a model number (e.g. 7600X) or category (e.g. monitor).`
+    );
+  }
+
+  lines.push("Local fallback from live TechPulse data. Confirm stock and final cash price with the store.");
+  return lines.join("\n");
 }
 
 // Highlight & Scroll to product
