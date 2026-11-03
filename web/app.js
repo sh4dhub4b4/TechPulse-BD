@@ -132,6 +132,18 @@ function setupGlobalEventDelegation() {
       case "highlight-product":
         highlightProduct(id);
         break;
+      case "close-review-modal":
+        closeReviewModal();
+        break;
+      case "close-comparison-modal":
+        closeComparisonModal();
+        break;
+      case "close-profile-modal":
+        closeUserProfileModal();
+        break;
+      case "close-auth-modal":
+        closeAuthModal();
+        break;
     }
   });
 }
@@ -147,6 +159,19 @@ function handleUrlDeepLink() {
   }
 }
 
+// Modal scroll locking helper to prevent background jumping and double scrollbars
+function setModalScrollLock(isLocked) {
+  if (isLocked) {
+    document.body.classList.add("overflow-hidden");
+  } else {
+    // Only remove lock if all dialog modals are closed
+    const openModals = document.querySelectorAll("#review-modal:not(.hidden), #comparison-modal:not(.hidden), #profile-modal:not(.hidden), #auth-modal:not(.hidden)");
+    if (openModals.length === 0) {
+      document.body.classList.remove("overflow-hidden");
+    }
+  }
+}
+
 // Keyboard shortcuts
 function setupKeyboardShortcuts() {
   window.addEventListener("keydown", (e) => {
@@ -158,10 +183,7 @@ function setupKeyboardShortcuts() {
       closeAuthModal();
       closeUserProfileModal();
       closeComparisonModal();
-      const ragDrawer = document.getElementById("rag-drawer");
-      if (ragDrawer && !ragDrawer.classList.contains("translate-x-full")) {
-        toggleRagDrawer();
-      }
+      closeReviewModal();
     }
   });
 }
@@ -271,6 +293,7 @@ function openReviewModal(productId = "") {
   const modal = document.getElementById("review-modal");
   if (modal) {
     modal.classList.remove("hidden");
+    setModalScrollLock(true);
     if (productId) {
       const select = document.getElementById("composer-product-select");
       if (select) select.value = productId;
@@ -284,7 +307,10 @@ function openReviewModal(productId = "") {
 
 function closeReviewModal() {
   const modal = document.getElementById("review-modal");
-  if (modal) modal.classList.add("hidden");
+  if (modal) {
+    modal.classList.add("hidden");
+    setModalScrollLock(false);
+  }
 }
 
 // Reset All Filters
@@ -748,6 +774,19 @@ function loadMoreProducts() {
   renderHardwareFeed(false);
 }
 
+// Clean Product Vendor URL (Strips Wayback Machine archive prefixes so outbound links route to live store)
+function cleanProductUrl(url) {
+  if (!url) return "";
+  let clean = String(url).trim();
+  // Strip Wayback Machine prefix e.g. https://web.archive.org/web/20261015023927/https://www.ryans.com/...
+  // Also handles flag variants like 20260000000000id_ or /web/20260505191404_id/
+  const archiveMatch = clean.match(/^https?:\/\/web\.archive\.org\/web\/\d+(?:[a-z_]+)?\/(https?:\/\/.*)$/i);
+  if (archiveMatch && archiveMatch[1]) {
+    clean = archiveMatch[1];
+  }
+  return clean;
+}
+
 // Build Safe Affiliate URL
 function buildAffiliateUrl(originalUrl, vendorName) {
   const cleanVendor = (vendorName || "").toLowerCase();
@@ -763,7 +802,8 @@ function buildAffiliateUrl(originalUrl, vendorName) {
   if (!conf) conf = { param: "ref", tag: "techpulse_bd" };
 
   try {
-    const parsed = new URL(originalUrl);
+    const rawTarget = cleanProductUrl(originalUrl);
+    const parsed = new URL(rawTarget);
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
       return "#";
     }
@@ -1187,6 +1227,7 @@ function openComparisonModal() {
   const grid = document.getElementById("comparison-grid");
 
   modal.classList.remove("hidden");
+  setModalScrollLock(true);
   const items = Array.from(comparisonTray.values());
 
   grid.innerHTML = items.map((item) => {
@@ -1232,7 +1273,9 @@ function openComparisonModal() {
 }
 
 function closeComparisonModal() {
-  document.getElementById("comparison-modal").classList.add("hidden");
+  const modal = document.getElementById("comparison-modal");
+  if (modal) modal.classList.add("hidden");
+  setModalScrollLock(false);
 }
 
 // Render Community Posts Feed
@@ -1859,12 +1902,19 @@ function updateUserUI() {
 }
 
 function openAuthModal() {
-  document.getElementById("auth-modal").classList.remove("hidden");
-  document.getElementById("auth-phone-input").focus();
+  const modal = document.getElementById("auth-modal");
+  if (modal) {
+    modal.classList.remove("hidden");
+    setModalScrollLock(true);
+    const phoneInput = document.getElementById("auth-phone-input");
+    if (phoneInput) phoneInput.focus();
+  }
 }
 
 function closeAuthModal() {
-  document.getElementById("auth-modal").classList.add("hidden");
+  const modal = document.getElementById("auth-modal");
+  if (modal) modal.classList.add("hidden");
+  setModalScrollLock(false);
 }
 
 async function handleAuthSubmit() {
@@ -1914,7 +1964,10 @@ function handleLogout() {
 // User Public Profile Modal
 async function openUserProfileModal(username) {
   const modal = document.getElementById("profile-modal");
-  modal.classList.remove("hidden");
+  if (modal) {
+    modal.classList.remove("hidden");
+    setModalScrollLock(true);
+  }
 
   document.getElementById("modal-profile-username").innerText = `@${username}`;
   document.getElementById("modal-profile-avatar").innerText = username.substring(0, 2).toUpperCase();
@@ -1947,7 +2000,9 @@ async function openUserProfileModal(username) {
 }
 
 function closeUserProfileModal() {
-  document.getElementById("profile-modal").classList.add("hidden");
+  const modal = document.getElementById("profile-modal");
+  if (modal) modal.classList.add("hidden");
+  setModalScrollLock(false);
 }
 
 // ==========================================

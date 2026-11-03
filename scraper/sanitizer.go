@@ -7,11 +7,12 @@ import (
 )
 
 var (
-	scriptTagRegex = regexp.MustCompile(`(?i)<script[\s\S]*?</script>`)
-	styleTagRegex  = regexp.MustCompile(`(?i)<style[\s\S]*?</style>`)
-	htmlTagRegex   = regexp.MustCompile(`<[^>]*>`)
-	ctrlCharsRegex = regexp.MustCompile(`[\x00-\x1F\x7F]`)
-	multipleSpaces = regexp.MustCompile(`\s+`)
+	scriptTagRegex    = regexp.MustCompile(`(?i)<script[\s\S]*?</script>`)
+	styleTagRegex     = regexp.MustCompile(`(?i)<style[\s\S]*?</style>`)
+	htmlTagRegex      = regexp.MustCompile(`<[^>]*>`)
+	ctrlCharsRegex    = regexp.MustCompile(`[\x00-\x1F\x7F]`)
+	multipleSpaces    = regexp.MustCompile(`\s+`)
+	archiveURLPrefix  = regexp.MustCompile(`(?i)^https?://web\.archive\.org/web/\d+(?:[a-z_]+)?/(https?://.*)$`)
 )
 
 const (
@@ -48,6 +49,9 @@ func SanitizeItem(item ScrapedItem) (ScrapedItem, bool) {
 
 	// 3. Verify Valid URL Schemes (Strictly http or https)
 	cleanProductURL := strings.TrimSpace(item.ProductURL)
+	if m := archiveURLPrefix.FindStringSubmatch(cleanProductURL); len(m) > 1 {
+		cleanProductURL = m[1]
+	}
 	if !strings.HasPrefix(cleanProductURL, "http://") && !strings.HasPrefix(cleanProductURL, "https://") {
 		return item, false
 	}
