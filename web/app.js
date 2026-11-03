@@ -1853,8 +1853,24 @@ async function fetchHardwarePulseMetrics() {
 }
 
 function setPulseMetric(id, value) {
+  const formatted = Number(value || 0).toLocaleString();
   const el = document.getElementById(id);
-  if (el) el.innerText = Number(value || 0).toLocaleString();
+  if (el) el.innerText = formatted;
+
+  // Sync dual mirrored analytics widgets
+  if (id === "pulse-active-users") {
+    const s = document.getElementById("sidebar-pulse-users");
+    if (s) s.innerText = formatted;
+  } else if (id === "pulse-total-skus") {
+    const s = document.getElementById("sidebar-pulse-skus");
+    if (s) s.innerText = formatted;
+  } else if (id === "pulse-updated-24h") {
+    const s = document.getElementById("sidebar-pulse-updates");
+    if (s) s.innerText = formatted;
+  } else if (id === "pulse-velocity-1h") {
+    const s = document.getElementById("sidebar-pulse-velocity");
+    if (s) s.innerText = formatted;
+  }
 }
 
 // ==========================================

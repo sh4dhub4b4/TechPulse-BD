@@ -351,7 +351,7 @@
           </div>
 
           <!-- Section 5: Retail Hubs & Verified Reviews Link -->
-          <div class="pt-3 border-t border-slate-100 space-y-1.5 text-xs">
+          <div class="pt-3 border-t border-slate-100 space-y-2 text-xs">
             <div class="flex items-center justify-between text-[11px]">
               <span class="text-slate-500 font-medium">Buyer Feedback:</span>
               <button
@@ -365,6 +365,29 @@
             <div class="text-[10px] text-slate-400 flex items-center justify-between">
               <span>Covered Hubs:</span>
               <span class="text-slate-700 font-medium">Elephant Rd • Multiplan • IDB</span>
+            </div>
+
+            <!-- Sidebar Pulse Analytics Snapshot (Directly below Buyer Feedback in Filter Sidebar) -->
+            <div class="pt-2 border-t border-slate-100 space-y-1.5">
+              <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Live Platform Pulse</div>
+              <div class="grid grid-cols-2 gap-1.5 font-mono text-xs">
+                <div class="bg-slate-50 border border-slate-200/80 p-2 rounded-md">
+                  <span class="text-[9px] text-slate-400 uppercase block font-sans">Active Users</span>
+                  <span id="sidebar-pulse-users" class="font-bold text-slate-900">—</span>
+                </div>
+                <div class="bg-slate-50 border border-slate-200/80 p-2 rounded-md">
+                  <span class="text-[9px] text-slate-400 uppercase block font-sans">Total SKUs</span>
+                  <span id="sidebar-pulse-skus" class="font-bold text-slate-900">—</span>
+                </div>
+                <div class="bg-slate-50 border border-slate-200/80 p-2 rounded-md">
+                  <span class="text-[9px] text-slate-400 uppercase block font-sans">24h Price Sync</span>
+                  <span id="sidebar-pulse-updates" class="font-bold text-slate-900">—</span>
+                </div>
+                <div class="bg-slate-50 border border-slate-200/80 p-2 rounded-md">
+                  <span class="text-[9px] text-slate-400 uppercase block font-sans">1h Feedback</span>
+                  <span id="sidebar-pulse-velocity" class="font-bold text-slate-900">—</span>
+                </div>
+              </div>
             </div>
           </div>
 
