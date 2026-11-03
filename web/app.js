@@ -1973,23 +1973,60 @@ async function askHardwareAdvisor(query) {
 }
 
 async function requestRemoteAdvisor(query, history) {
-  const { data, error } = await sb.functions.invoke(HARDWARE_ASSISTANT_FUNCTION, {
-    body: {
-      query,
-      context: buildChatContext(),
-      messages: [
-        { role: "system", content: CHATBOT_SYSTEM_PROMPT },
-        ...history,
-        { role: "user", content: query },
-      ],
-    },
-  });
+  // 1. Try public keyless AI provider (Pollinations.ai)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 9000);
 
-  if (error) throw error;
+  try {
+    const response = await fetch("https://text.pollinations.ai/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: [
+          { role: "system", content: CHATBOT_SYSTEM_PROMPT },
+          ...history.slice(-4),
+          { role: "user", content: query },
+        ],
+        model: "openai",
+        seed: 42,
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
 
-  const reply = typeof data === "string" ? data : data?.reply;
-  if (!reply || typeof reply !== "string") throw new Error("Advisor unavailable");
-  return reply.trim();
+    if (response.ok) {
+      const text = await response.text();
+      if (text && text.trim().length > 0) {
+        return text.trim();
+      }
+    }
+  } catch (_pollinationsErr) {
+    clearTimeout(timeoutId);
+  }
+
+  // 2. Fallback to Supabase Edge Function if deployed
+  if (typeof sb !== "undefined" && sb.functions) {
+    const { data, error } = await sb.functions.invoke(HARDWARE_ASSISTANT_FUNCTION, {
+      body: {
+        query,
+        context: buildChatContext(),
+        messages: [
+          { role: "system", content: CHATBOT_SYSTEM_PROMPT },
+          ...history,
+          { role: "user", content: query },
+        ],
+      },
+    });
+
+    if (!error) {
+      const reply = typeof data === "string" ? data : data?.reply;
+      if (reply && typeof reply === "string") return reply.trim();
+    }
+  }
+
+  throw new Error("Advisor remote unavailable");
 }
 
 function buildChatContext() {
