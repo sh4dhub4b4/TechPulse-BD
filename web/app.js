@@ -1973,7 +1973,17 @@ async function askHardwareAdvisor(query) {
 }
 
 async function requestRemoteAdvisor(query, history) {
-  // 1. Try public keyless AI provider (Pollinations.ai)
+  // 1. Prepare live database context (RAG)
+  const matchingProducts = findChatProducts(query);
+  let liveDbContext = "";
+  if (matchingProducts && matchingProducts.length > 0) {
+    liveDbContext = "\n\nLive Database Inventory & Pricing (Bangladesh Market):\n" +
+      matchingProducts.map((p) => `- ${p.vendor_name}: ${p.title} at ৳${Number(p.current_price).toLocaleString("en-US")} (${p.in_stock ? "In Stock" : "Check Stock"})`).join("\n");
+  }
+
+  const systemPromptWithData = CHATBOT_SYSTEM_PROMPT + liveDbContext;
+
+  // 2. Try public keyless AI provider (Pollinations.ai)
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 9000);
 
@@ -1985,7 +1995,7 @@ async function requestRemoteAdvisor(query, history) {
       },
       body: JSON.stringify({
         messages: [
-          { role: "system", content: CHATBOT_SYSTEM_PROMPT },
+          { role: "system", content: systemPromptWithData },
           ...history.slice(-4),
           { role: "user", content: query },
         ],
@@ -2006,14 +2016,14 @@ async function requestRemoteAdvisor(query, history) {
     clearTimeout(timeoutId);
   }
 
-  // 2. Fallback to Supabase Edge Function if deployed
+  // 3. Fallback to Supabase Edge Function if deployed
   if (typeof sb !== "undefined" && sb.functions) {
     const { data, error } = await sb.functions.invoke(HARDWARE_ASSISTANT_FUNCTION, {
       body: {
         query,
         context: buildChatContext(),
         messages: [
-          { role: "system", content: CHATBOT_SYSTEM_PROMPT },
+          { role: "system", content: systemPromptWithData },
           ...history,
           { role: "user", content: query },
         ],
