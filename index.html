@@ -57,7 +57,7 @@
         <!-- Brand Logo -->
         <a
           href="javascript:void(0)"
-          onclick="switchMainFeedMode('HARDWARE'); window.scrollTo({top:0, behavior:'smooth'});"
+          onclick="switchMainFeedMode('CATALOG'); window.scrollTo({top:0, behavior:'smooth'});"
           class="flex items-center space-x-2.5 group cursor-pointer"
           title="TechPulse BD"
         >
@@ -372,7 +372,7 @@
       </aside>
 
       <!-- RIGHT COLUMN: MAIN CONTENT CANVAS -->
-      <section class="lg:col-span-8 xl:col-span-9 2xl:col-span-10 space-y-2.5">
+      <section class="lg:col-span-8 xl:col-span-9 space-y-2.5">
         
         <!-- SOCIAL POST COMPOSER & RECENT STORE REVIEWS (Active on Community Mode) -->
         <div id="community-post-composer" class="hidden space-y-3">
@@ -524,8 +524,8 @@
   </main>
 
   <!-- POST REVIEW MODAL (ON-DEMAND) -->
-  <div id="review-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden flex items-center justify-center p-4">
-    <div class="bg-white border border-slate-200 rounded-lg max-w-lg w-full p-6 space-y-4 shadow-2xl">
+  <div id="review-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden flex items-center justify-center p-4" onclick="if(event.target === this) closeReviewModal()">
+    <div class="bg-white border border-slate-200 rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto custom-scrollbar p-6 space-y-4 shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-200 pb-3">
         <div class="flex items-center space-x-2">
           <div class="h-6 w-6 rounded bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center text-xs font-bold font-mono">
@@ -619,7 +619,7 @@
   </div>
 
   <!-- HARDWARE COMPARISON MATRIX MODAL -->
-  <div id="comparison-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden flex items-center justify-center p-4">
+  <div id="comparison-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden flex items-center justify-center p-4" onclick="if(event.target === this) closeComparisonModal()">
     <div class="bg-white border border-slate-200 rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar p-6 space-y-4 shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-200 pb-3">
         <div class="flex items-center space-x-2">
@@ -636,8 +636,8 @@
   </div>
 
   <!-- USER PROFILE MODAL (SOCIAL MEDIA) -->
-  <div id="profile-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden flex items-center justify-center p-4">
-    <div class="bg-white border border-slate-200 rounded-lg max-w-md w-full p-6 space-y-4 shadow-2xl">
+  <div id="profile-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden flex items-center justify-center p-4" onclick="if(event.target === this) closeUserProfileModal()">
+    <div class="bg-white border border-slate-200 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto custom-scrollbar p-6 space-y-4 shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-200 pb-3">
         <div class="flex items-center space-x-3">
           <div id="modal-profile-avatar" class="h-10 w-10 rounded-full bg-slate-900 text-white font-semibold flex items-center justify-center text-sm font-mono border border-slate-200 shadow-sm">
@@ -678,8 +678,8 @@
   </div>
 
   <!-- AUTH / JOIN COMMUNITY MODAL -->
-  <div id="auth-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden flex items-center justify-center p-4">
-    <div class="bg-white border border-slate-200 rounded-lg max-w-sm w-full p-6 space-y-4 shadow-2xl">
+  <div id="auth-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden flex items-center justify-center p-4" onclick="if(event.target === this) closeAuthModal()">
+    <div class="bg-white border border-slate-200 rounded-lg max-w-sm w-full max-h-[90vh] overflow-y-auto custom-scrollbar p-6 space-y-4 shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-200 pb-3">
         <div class="flex items-center space-x-2">
           <div class="h-7 w-7 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700">
