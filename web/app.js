@@ -152,6 +152,28 @@ function setupGlobalEventDelegation() {
       case "close-auth-modal":
         closeAuthModal();
         break;
+      case "open-auth-modal":
+        openAuthModal();
+        break;
+      case "handle-logout":
+        handleLogout();
+        break;
+      case "track-affiliate": {
+        const vendor = target.getAttribute("data-vendor") || "";
+        const url = target.getAttribute("data-url") || target.href;
+        const price = Number(target.getAttribute("data-price")) || 0;
+        trackAffiliateClick(id, vendor, url, price);
+        break;
+      }
+      case "submit-inline-review":
+        submitInlineReview(id);
+        break;
+      case "choose-build-slot": {
+        const cat = target.getAttribute("data-category") || "";
+        setCategoryFilter(cat);
+        switchMainFeedMode("CATALOG");
+        break;
+      }
     }
   });
 }
@@ -1011,7 +1033,11 @@ function renderSingleCard(p) {
                     href="${vUrl}"
                     target="_blank"
                     rel="noopener noreferrer nofollow sponsored"
-                    onclick="trackAffiliateClick('${escapeHtml(v.id)}', '${escapeHtml(v.vendor_name)}', '${vUrl}', ${v.current_price})"
+                    data-action="track-affiliate"
+                    data-id="${escapeHtml(v.id)}"
+                    data-vendor="${escapeHtml(v.vendor_name)}"
+                    data-url="${vUrl}"
+                    data-price="${v.current_price}"
                     class="flex items-center justify-between p-1.5 rounded-md bg-white border border-slate-200/80 hover:border-slate-400 transition text-[11px] group/item shadow-2xs"
                   >
                     <span class="truncate text-slate-700 font-medium group-hover/item:text-slate-900 mr-1">${escapeHtml(v.vendor_name.split(' ')[0])}</span>
@@ -1079,7 +1105,11 @@ function renderSingleCard(p) {
             href="${safeAffiliateUrl}"
             target="_blank"
             rel="noopener noreferrer nofollow sponsored"
-            onclick="trackAffiliateClick('${escapeHtml(p.id)}', '${escapeHtml(p.vendor_name)}', '${safeAffiliateUrl}', ${p.current_price})"
+            data-action="track-affiliate"
+            data-id="${escapeHtml(p.id)}"
+            data-vendor="${escapeHtml(p.vendor_name)}"
+            data-url="${safeAffiliateUrl}"
+            data-price="${p.current_price}"
             class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white font-medium flex items-center space-x-1.5 transition text-xs shadow-xs min-h-[28px]"
           >
             <span>Visit Store</span>
@@ -1170,7 +1200,9 @@ function renderSingleCard(p) {
             ></textarea>
             <div class="flex justify-end">
               <button
-                onclick="submitInlineReview('${escapeHtml(p.id)}')"
+                type="button"
+                data-action="submit-inline-review"
+                data-id="${escapeHtml(p.id)}"
                 class="px-3 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition min-h-[28px]"
               >
                 Post Review
@@ -2342,7 +2374,7 @@ function updateUserUI() {
 
   if (!currentUser) {
     container.innerHTML = `
-      <button onclick="openAuthModal()" class="px-3.5 py-1.5 rounded-md bg-white hover:bg-slate-50 text-slate-800 font-medium border border-slate-200 transition flex items-center space-x-1.5 text-xs min-h-[34px] shadow-2xs">
+      <button data-action="open-auth-modal" class="px-3.5 py-1.5 rounded-md bg-white hover:bg-slate-50 text-slate-800 font-medium border border-slate-200 transition flex items-center space-x-1.5 text-xs min-h-[34px] shadow-2xs">
         <i data-lucide="user-plus" class="w-3.5 h-3.5 text-slate-500"></i>
         <span>Sign In</span>
       </button>
@@ -2354,13 +2386,13 @@ function updateUserUI() {
   const initials = currentUser.username.substring(0, 2).toUpperCase();
   container.innerHTML = `
     <div class="flex items-center space-x-2">
-      <button onclick="openUserProfileModal('${escapeHtml(currentUser.username)}')" class="flex items-center space-x-2 px-3 py-1.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 text-xs min-h-[34px] shadow-2xs">
+      <button data-action="view-profile" data-username="${escapeHtml(currentUser.username)}" class="flex items-center space-x-2 px-3 py-1.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 text-xs min-h-[34px] shadow-2xs">
         <div class="h-4 w-4 rounded-full bg-emerald-600 text-[10px] flex items-center justify-center font-bold text-white">
           ${initials}
         </div>
         <span>@${escapeHtml(currentUser.username)}</span>
       </button>
-      <button onclick="handleLogout()" class="text-slate-400 hover:text-red-600 text-xs px-1.5" title="Sign Out">Exit</button>
+      <button data-action="handle-logout" class="text-slate-400 hover:text-red-600 text-xs px-1.5" title="Sign Out">Exit</button>
     </div>
   `;
 
@@ -2638,7 +2670,7 @@ function renderBuildLab() {
             </span>
             <span class="text-xs">No component selected for this slot</span>
           </div>
-          <button onclick="setCategoryFilter('${slot.key === 'Storage' ? 'SSD' : slot.key}'); switchMainFeedMode('CATALOG');" class="px-2.5 py-1 rounded bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-medium transition shadow-2xs">
+          <button data-action="choose-build-slot" data-category="${slot.key === 'Storage' ? 'SSD' : slot.key}" class="px-2.5 py-1 rounded bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-medium transition shadow-2xs">
             + Choose ${slot.label.split(" ")[0]}
           </button>
         </div>
