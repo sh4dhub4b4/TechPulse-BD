@@ -174,8 +174,37 @@ function setupGlobalEventDelegation() {
         switchMainFeedMode("CATALOG");
         break;
       }
+      case "open-hardware-chat":
+        openHardwareChat();
+        break;
+      case "close-hardware-chat":
+        closeHardwareChat();
+        break;
+      case "toggle-hardware-chat":
+        toggleHardwareChat();
+        break;
+      case "clear-hardware-chat":
+        clearHardwareChat();
+        break;
+      case "send-chat-preset": {
+        const prompt = target.getAttribute("data-prompt");
+        if (prompt) sendChatPreset(prompt);
+        break;
+      }
+      case "chat-view-product":
+        highlightProduct(id);
+        break;
+      case "chat-add-to-build":
+        handleAddToBuild(id);
+        break;
     }
   });
+
+  const chatForm = document.getElementById("chat-form");
+  if (chatForm && !chatForm.dataset.bound) {
+    chatForm.dataset.bound = "true";
+    chatForm.addEventListener("submit", handleChatSubmit);
+  }
 }
 
 // Deep Linking (?item=XYZ)
@@ -1922,14 +1951,18 @@ Pricing conventions:
 Compatibility rules:
 - AM5 requires DDR5 memory.
 - AM4 requires DDR4 memory.
+- LGA1851 requires DDR5 memory (Intel Core Ultra 200 series).
 - LGA1700 supports DDR4 or DDR5 depending on the specific motherboard.
 Answer concisely, cite vendor and cash price when recommending parts, and ask at most one clarifying question.`;
 
 const CHATBOT_SOCKET_RULES = {
   AM5: "DDR5 memory only.",
   AM4: "DDR4 memory only.",
+  LGA1851: "DDR5 memory only (Intel Core Ultra 200 series).",
   LGA1700: "DDR4 or DDR5, depending on the motherboard.",
 };
+
+const CHATBOT_KNOWN_VENDORS = ["star tech", "ryans", "tech land", "pc house", "ucc", "nexus", "skyland", "creatus", "ultra"];
 
 const CHATBOT_STOP_WORDS = new Set(
   "a an and are as at be best build builds budget by can card cash component components computer could do does find for from give good handle i in is it me my need of on or pc please pos price prices recommend recommendation should show taka the tk to top under up vs versus want what which will with within without bd bangladesh dhaka bdt".split(" ")
@@ -1958,6 +1991,21 @@ function closeHardwareChat() {
   setModalScrollLock(false);
 }
 
+function clearHardwareChat() {
+  chatbotConversation.length = 0;
+  const container = document.getElementById("chat-messages-container");
+  if (container) {
+    container.innerHTML = `
+      <div class="flex justify-start">
+        <div class="max-w-[85%] rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-slate-700 leading-relaxed whitespace-pre-line">
+          Ask about BD cash prices, AM4/AM5/LGA1700/LGA1851 compatibility, or a build budget.
+        </div>
+      </div>
+    `;
+  }
+  document.getElementById("chat-input")?.focus();
+}
+
 function sendChatPreset(prompt) {
   if (chatBusy) return;
   const input = document.getElementById("chat-input");
@@ -1978,6 +2026,58 @@ async function handleChatSubmit(event) {
   await askHardwareAdvisor(query);
 }
 
+function formatChatMarkdown(text) {
+  if (!text) return "";
+  let html = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+  // Bold: **text**
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-slate-900">$1</strong>');
+
+  // Italic: *text* (when not inside other markers)
+  html = html.replace(/(^|[^*])\*([^*]+?)\*([^*]|$)/g, '$1<em class="italic">$2</em>$3');
+
+  // Inline code: `code`
+  html = html.replace(/`([^`]+?)`/g, '<code class="px-1 py-0.5 rounded bg-slate-200/80 font-mono text-[11px] text-slate-800">$1</code>');
+
+  // Bullet items: - or * or • at line start
+  html = html.replace(/^[\t ]*[-•*]\s+(.+)$/gm, '<li class="ml-3 list-disc">$1</li>');
+  html = html.replace(/((?:<li class="ml-3 list-disc">.+?<\/li>\s*)+)/g, '<ul class="space-y-0.5 my-1">$1</ul>');
+
+  // Safe external links
+  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-emerald-600 hover:underline inline-flex items-center gap-0.5">$1</a>');
+
+  return html;
+}
+
+function renderChatTypingIndicator() {
+  const container = document.getElementById("chat-messages-container");
+  if (!container) return document.createElement("div");
+
+  const row = document.createElement("div");
+  row.className = "flex justify-start";
+
+  const bubble = document.createElement("div");
+  bubble.className = "rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-slate-500 text-xs flex items-center gap-1.5";
+  bubble.innerHTML = `
+    <span class="text-[11px] text-slate-500 font-medium">Checking live catalog</span>
+    <span class="inline-flex gap-1 items-center ml-1">
+      <span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse"></span>
+      <span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse [animation-delay:200ms]"></span>
+      <span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse [animation-delay:400ms]"></span>
+    </span>
+  `;
+
+  row.appendChild(bubble);
+  container.appendChild(row);
+  container.scrollTop = container.scrollHeight;
+  return row;
+}
+
 async function askHardwareAdvisor(query) {
   const history = chatbotConversation.slice(-CHATBOT_HISTORY_MESSAGES).map((turn) => ({
     role: turn.role,
@@ -1988,25 +2088,26 @@ async function askHardwareAdvisor(query) {
   renderChatMessage("user", query);
   setChatBusy(true);
 
-  const loadingBubble = renderChatMessage("assistant", "Checking the live catalog...");
+  const loadingBubble = renderChatTypingIndicator();
   let reply;
+  const matchingProducts = findChatProducts(query);
 
   try {
-    reply = await requestRemoteAdvisor(query, history);
+    reply = await requestRemoteAdvisor(query, history, matchingProducts);
   } catch (err) {
-    reply = buildLocalAdvisorReply(query);
+    reply = buildLocalAdvisorReply(query, matchingProducts);
   }
 
   loadingBubble.remove();
   chatbotConversation.push({ role: "assistant", content: reply });
-  renderChatMessage("assistant", reply);
+  renderChatMessage("assistant", reply, matchingProducts);
   setChatBusy(false);
   document.getElementById("chat-input")?.focus();
 }
 
-async function requestRemoteAdvisor(query, history) {
+async function requestRemoteAdvisor(query, history, preloadedProducts = null) {
   // 1. Prepare live database context (RAG)
-  const matchingProducts = findChatProducts(query);
+  const matchingProducts = preloadedProducts || findChatProducts(query);
   let liveDbContext = "";
   if (matchingProducts && matchingProducts.length > 0) {
     liveDbContext = "\n\nLive Database Inventory & Pricing (Bangladesh Market):\n" +
@@ -2089,7 +2190,7 @@ function buildChatContext() {
   };
 }
 
-function renderChatMessage(role, text) {
+function renderChatMessage(role, text, suggestedProducts = []) {
   const container = document.getElementById("chat-messages-container");
   if (!container) return document.createElement("div");
 
@@ -2101,11 +2202,36 @@ function renderChatMessage(role, text) {
     role === "user"
       ? "max-w-[85%] rounded-lg bg-slate-900 text-white px-3 py-2 leading-relaxed whitespace-pre-line"
       : "max-w-[85%] rounded-lg bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 leading-relaxed whitespace-pre-line";
-  bubble.textContent = text;
+
+  if (role === "user") {
+    bubble.textContent = text;
+  } else {
+    bubble.innerHTML = formatChatMarkdown(text);
+
+    if (Array.isArray(suggestedProducts) && suggestedProducts.length > 0) {
+      const chipsWrapper = document.createElement("div");
+      chipsWrapper.className = "mt-2 pt-2 border-t border-slate-200/70 flex flex-wrap gap-1.5";
+      suggestedProducts.slice(0, 3).forEach((p) => {
+        const chip = document.createElement("div");
+        chip.className = "inline-flex items-center gap-1 bg-white border border-slate-200 rounded px-1.5 py-0.5 text-[10px] text-slate-800 shadow-sm";
+        chip.innerHTML = `
+          <span class="truncate max-w-[120px] font-medium" title="${p.title}">${p.title}</span>
+          <button type="button" data-action="chat-view-product" data-id="${p.id}" class="text-emerald-600 hover:text-emerald-700 font-semibold px-0.5" title="View in Catalog">View</button>
+          <span class="text-slate-300">|</span>
+          <button type="button" data-action="chat-add-to-build" data-id="${p.id}" class="text-slate-600 hover:text-slate-900 font-semibold px-0.5" title="Add to Build Lab">+Build</button>
+        `;
+        chipsWrapper.appendChild(chip);
+      });
+      bubble.appendChild(chipsWrapper);
+    }
+  }
 
   row.appendChild(bubble);
   container.appendChild(row);
   container.scrollTop = container.scrollHeight;
+  if (typeof lucide !== "undefined" && lucide.createIcons) {
+    lucide.createIcons();
+  }
   return row;
 }
 
@@ -2120,6 +2246,7 @@ function setChatBusy(isBusy) {
 function detectChatSocket(text) {
   if (/\bam5\b/i.test(text)) return "AM5";
   if (/\bam4\b/i.test(text)) return "AM4";
+  if (/\blga\s*1851\b/i.test(text)) return "LGA1851";
   if (/\blga\s*1700\b/i.test(text)) return "LGA1700";
   return null;
 }
@@ -2128,11 +2255,57 @@ function inferProductSocket(title) {
   const t = (title || "").toLowerCase();
   if (/\bam5\b/.test(t)) return "AM5";
   if (/\bam4\b/.test(t)) return "AM4";
+  if (/\blga\s*1851\b/.test(t)) return "LGA1851";
   if (/\blga\s*1700\b/.test(t)) return "LGA1700";
-  if (/\bryzen\s*[789]\s*\d{3}/.test(t)) return "AM5";
-  if (/\bryzen\s*[1-5]\s*\d{3}/.test(t)) return "AM4";
-  if (/\b(i[3579]|intel\s+core).{0,24}\b1[2-4]\d{2}\b/.test(t)) return "LGA1700";
+  if (/\b(core\s*ultra|ultra\s*[579]).{0,24}\b2\d{2}[a-z]*\b/.test(t)) return "LGA1851";
+  if (/\bryzen(?:\s*[3579])?\s*[789]\d{3}/.test(t)) return "AM5";
+  if (/\bryzen(?:\s*[3579])?\s*[1-5]\d{3}/.test(t)) return "AM4";
+  if (/\b(i[3579]|intel\s+core).{0,24}\b1[2-4]\d{3}[a-z]*\b/.test(t)) return "LGA1700";
   return null;
+}
+
+function evaluateChatPsuRequirements(query) {
+  const q = (query || "").toLowerCase();
+  let gpu = null;
+  let recommendedWattage = 0;
+
+  if (/\b(rtx\s*4090|3090\s*ti)\b/.test(q)) {
+    gpu = "RTX 4090";
+    recommendedWattage = 850;
+  } else if (/\b(rtx\s*4080|rx\s*7900\s*xtx|rx\s*7900\s*xt)\b/.test(q)) {
+    gpu = "RTX 4080 / RX 7900 series";
+    recommendedWattage = 750;
+  } else if (/\b(rtx\s*4070(\s*ti|\s*super)?|rx\s*7800\s*xt|rtx\s*3080)\b/.test(q)) {
+    gpu = "RTX 4070 series";
+    recommendedWattage = 650;
+  } else if (/\b(rtx\s*4060(\s*ti)?|rtx\s*3060|rx\s*7600|rx\s*6700)\b/.test(q)) {
+    gpu = "RTX 4060 / RX 7600 class";
+    recommendedWattage = 550;
+  }
+
+  if (!gpu) return null;
+
+  const wattMatch = q.match(/\b(\d{3,4})\s*(?:w|watt|watts)\b/);
+  const askedWattage = wattMatch ? parseInt(wattMatch[1], 10) : null;
+
+  if (askedWattage) {
+    const isSufficient = askedWattage >= recommendedWattage;
+    return {
+      gpu,
+      askedWattage,
+      recommendedWattage,
+      isSufficient,
+      note: isSufficient
+        ? `PSU Check: Yes, a quality ${askedWattage}W PSU is sufficient for ${gpu} (recommended minimum: ${recommendedWattage}W).`
+        : `PSU Check: Caution — ${askedWattage}W may be tight for ${gpu}. A tier-rated ${recommendedWattage}W+ PSU is recommended to absorb transient power spikes.`,
+    };
+  }
+
+  return {
+    gpu,
+    recommendedWattage,
+    note: `PSU Check: For ${gpu}, a quality PSU with at least ${recommendedWattage}W is recommended.`,
+  };
 }
 
 function parseChatBudget(text) {
@@ -2206,27 +2379,73 @@ function findChatProducts(query) {
 
   ranked.sort((a, b) => b.score - a.score || Number(a.product.current_price) - Number(b.product.current_price));
 
+  // Multi-vendor comparative query handling (e.g. "Star Tech vs Ryans 7600X")
+  const qLower = query.toLowerCase();
+  const mentionedVendors = CHATBOT_KNOWN_VENDORS.filter((v) => qLower.includes(v));
+  if (mentionedVendors.length >= 2) {
+    const multiStoreProducts = [];
+    for (const v of mentionedVendors) {
+      const fromVendor = ranked.filter(({ product }) =>
+        (product.vendor_name || "").toLowerCase().includes(v)
+      );
+      if (fromVendor.length) {
+        multiStoreProducts.push(fromVendor[0].product);
+        if (fromVendor.length > 1 && multiStoreProducts.length < 4) {
+          multiStoreProducts.push(fromVendor[1].product);
+        }
+      }
+    }
+    if (multiStoreProducts.length >= 2) {
+      return multiStoreProducts.slice(0, 4);
+    }
+  }
+
+  // Full build query handling (e.g. "Recommend AM5 build under 70k"):
+  // Group by component category to assemble a balanced multi-part build list.
+  if (qLower.includes("build") && !modelTokens.length) {
+    const seenCategories = new Set();
+    const buildParts = [];
+    for (const { product } of ranked) {
+      const cat = product.category || "Other";
+      if (!seenCategories.has(cat)) {
+        seenCategories.add(cat);
+        buildParts.push(product);
+        if (buildParts.length >= 4) break;
+      }
+    }
+    if (buildParts.length > 0) return buildParts;
+  }
+
   // Keep only the strongest relevance tier so vendor-name noise can't outrank the requested part.
   if (ranked.length) {
     const bestScore = ranked[0].score;
     ranked = ranked.filter((entry) => entry.score >= Math.max(1, Math.ceil(bestScore / 2)));
   }
 
-  return ranked.slice(0, 3).map((entry) => entry.product);
+  return ranked.slice(0, 4).map((entry) => entry.product);
 }
 
-function buildLocalAdvisorReply(query) {
+function buildLocalAdvisorReply(query, preloadedProducts = null) {
   const socket = detectChatSocket(query);
   const ram = (query.match(/\bddr[45]\b/i) || [])[0]?.toUpperCase() || null;
   const budget = parseChatBudget(query);
-  const products = findChatProducts(query);
+  const products = preloadedProducts || findChatProducts(query);
   const lines = [];
 
   if (socket) {
     lines.push(`${socket} memory rule: ${CHATBOT_SOCKET_RULES[socket]}`);
-    if (socket === "AM5" && ram === "DDR4") lines.push("Compatibility: DDR4 will not work on AM5.");
-    else if (socket === "AM4" && ram === "DDR5") lines.push("Compatibility: DDR5 will not work on AM4.");
-    else if (socket === "LGA1700" && ram) lines.push(`Compatibility: ${ram} works only if the chosen LGA1700 motherboard supports it.`);
+    if ((socket === "AM5" || socket === "LGA1851") && ram === "DDR4") {
+      lines.push(`Compatibility: DDR4 will not work on ${socket}. DDR5 is required.`);
+    } else if (socket === "AM4" && ram === "DDR5") {
+      lines.push("Compatibility: DDR5 will not work on AM4.");
+    } else if (socket === "LGA1700" && ram) {
+      lines.push(`Compatibility: ${ram} works only if the chosen LGA1700 motherboard supports it.`);
+    }
+  }
+
+  const psuEval = evaluateChatPsuRequirements(query);
+  if (psuEval) {
+    lines.push(psuEval.note);
   }
 
   if (budget) lines.push(`Cash budget ceiling: ৳${budget.toLocaleString("en-US")}.`);

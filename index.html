@@ -784,7 +784,7 @@
   <button
     id="btn-chatbot-trigger"
     type="button"
-    onclick="toggleHardwareChat()"
+    data-action="toggle-hardware-chat"
     class="fixed bottom-5 right-5 z-40 bg-slate-900 text-white rounded-full p-3 shadow-xl hover:bg-slate-800 transition"
     title="Open hardware advisor"
     aria-label="Open hardware advisor"
@@ -808,21 +808,32 @@
           <div class="text-[10px] text-slate-400">BD pricing &amp; socket guidance</div>
         </div>
       </div>
-      <button
-        type="button"
-        onclick="closeHardwareChat()"
-        class="text-slate-500 hover:text-slate-900 p-1 rounded-md border border-slate-200 bg-slate-50 transition flex-shrink-0"
-        aria-label="Close hardware advisor"
-      >
-        <i data-lucide="x" class="w-3.5 h-3.5"></i>
-      </button>
+      <div class="flex items-center gap-1">
+        <button
+          type="button"
+          data-action="clear-hardware-chat"
+          class="text-slate-400 hover:text-slate-700 p-1 rounded-md border border-slate-200 bg-slate-50 transition flex-shrink-0"
+          aria-label="Clear chat history"
+          title="Clear chat history"
+        >
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+        </button>
+        <button
+          type="button"
+          data-action="close-hardware-chat"
+          class="text-slate-500 hover:text-slate-900 p-1 rounded-md border border-slate-200 bg-slate-50 transition flex-shrink-0"
+          aria-label="Close hardware advisor"
+        >
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
     </div>
 
     <!-- Conversation -->
     <div id="chat-messages-container" class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-3 text-xs">
       <div class="flex justify-start">
         <div class="max-w-[85%] rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-slate-700 leading-relaxed whitespace-pre-line">
-          Ask about BD cash prices, AM4/AM5/LGA1700 compatibility, or a build budget.
+          Ask about BD cash prices, AM4/AM5/LGA1700/LGA1851 compatibility, or a build budget.
         </div>
       </div>
     </div>
@@ -831,23 +842,26 @@
     <div class="px-3 pb-2 flex flex-wrap gap-1.5">
       <button
         type="button"
-        onclick="sendChatPreset('Recommend AM5 build under 70k')"
+        data-action="send-chat-preset"
+        data-prompt="Recommend AM5 build under 70k"
         class="px-2 py-1 rounded-full border border-slate-200/80 bg-slate-50 hover:bg-white text-[10px] text-slate-600 transition"
       >Recommend AM5 build under 70k</button>
       <button
         type="button"
-        onclick="sendChatPreset('Star Tech vs Ryans cash price for 7600X')"
+        data-action="send-chat-preset"
+        data-prompt="Star Tech vs Ryans cash price for 7600X"
         class="px-2 py-1 rounded-full border border-slate-200/80 bg-slate-50 hover:bg-white text-[10px] text-slate-600 transition"
       >Star Tech vs Ryans cash price for 7600X</button>
       <button
         type="button"
-        onclick="sendChatPreset('Will 650W PSU handle RTX 4070?')"
+        data-action="send-chat-preset"
+        data-prompt="Will 650W PSU handle RTX 4070?"
         class="px-2 py-1 rounded-full border border-slate-200/80 bg-slate-50 hover:bg-white text-[10px] text-slate-600 transition"
       >Will 650W PSU handle RTX 4070?</button>
     </div>
 
     <!-- Composer -->
-    <form id="chat-form" onsubmit="handleChatSubmit(event)" class="border-t border-slate-200 p-2.5 flex items-center gap-2 bg-white">
+    <form id="chat-form" class="border-t border-slate-200 p-2.5 flex items-center gap-2 bg-white">
       <input
         id="chat-input"
         type="text"
