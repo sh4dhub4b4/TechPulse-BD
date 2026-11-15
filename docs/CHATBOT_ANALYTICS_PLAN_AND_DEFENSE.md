@@ -313,3 +313,24 @@ The Price Radar does not merely mirror the catalog; it acts as an **algorithmic 
 - **Catalog Tab**: Optimized for **parametric exploration** (searching sockets, form factors, RAM types, and component compatibility).
 - **Price Radar Tab**: Optimized for **financial decision-making and arbitrage** (ranking hardware by maximum instant savings, vendor price differentials, and stock volatility).
 - Combining both into one single view creates cognitive clutter. Dedicating a tab to financial price telemetry follows the established user experience models of global price aggregators (e.g., **Idealo**, **Geizhals**, and **CamelCamelCamel**).
+
+---
+
+## 7. Implementation Status & Production Enhancements (v2.5)
+
+As of Release 2.5.0, the Stateless AI Assistant and Live Hardware Pulse Analytics Grid have been completely realized and upgraded beyond the original baseline specification:
+
+1. **Retrieval-Augmented Generation (RAG)**: Dynamically queries the local indexed Bangladeshi hardware database and injects real-time pricing and stock context directly into the AI system prompt.
+2. **Three-Tier Fallback Resilience**: 
+   - Tier 1: Public keyless provider (`Pollinations.ai`).
+   - Tier 2: Supabase Edge Functions (`POST /functions/v1/hardware-assistant`).
+   - Tier 3: Zero-network deterministic local heuristics engine.
+3. **Hardware & Sizing Heuristics**:
+   - Built-in socket detection for AM4, AM5, LGA1700, and next-gen LGA1851 (Intel Core Ultra 200 Arrow Lake) with DDR4/DDR5 compatibility checks.
+   - Built-in GPU-to-PSU wattage calculation (supporting RTX 4090/4080/4070/4060 and Radeon RX 7000 series).
+4. **Enhanced UI/UX**:
+   - Safe XSS-proof Markdown formatting (bold, italic, code, lists, links).
+   - Interactive action chips for instant catalog scrolling and 1-click addition to the PC Build Lab.
+   - Animated typing bubble and chat session reset controls.
+   - 100% CSP-compliant event delegation.
+5. **Quality Assurance**: Backed by 52 automated Vitest unit and integration tests across `pulse_analytics.test.js`, `ui_integration.test.js`, and `chatbot.test.js`.
