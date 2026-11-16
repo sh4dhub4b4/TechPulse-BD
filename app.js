@@ -25,7 +25,13 @@ const chartInstances = {};
 const savedBuildSlots = JSON.parse(localStorage.getItem("tp_build_slots") || "{}");
 const buildLabSlots = {
   Processor: savedBuildSlots.Processor || null,
+  Motherboard: savedBuildSlots.Motherboard || null,
+  RAM: savedBuildSlots.RAM || null,
+  GPU: savedBuildSlots.GPU || null,
   Storage: savedBuildSlots.Storage || null,
+  PSU: savedBuildSlots.PSU || null,
+  Casing: savedBuildSlots.Casing || null,
+  Cooler: savedBuildSlots.Cooler || null,
   Monitor: savedBuildSlots.Monitor || null,
   Keyboard: savedBuildSlots.Keyboard || null,
   Mouse: savedBuildSlots.Mouse || null,
@@ -44,6 +50,7 @@ const comparisonTray = new Map();
 // Social User State
 let currentUser = JSON.parse(localStorage.getItem("tp_current_user") || "null");
 const userUpvotedSet = new Set(JSON.parse(localStorage.getItem("tp_upvoted_deals") || "[]"));
+const activeUpvoteLocks = new Set();
 
 // Affiliate Mapping
 const AFFILIATE_MAP = {
@@ -126,7 +133,7 @@ function setupGlobalEventDelegation() {
         openUserProfileModal(target.getAttribute("data-username"));
         break;
       case "upvote-post":
-        handlePostUpvote(id);
+        handlePostUpvote(id, target);
         break;
       case "toggle-compare":
         toggleCompareItem(id);
@@ -234,9 +241,17 @@ function setModalScrollLock(isLocked) {
 // Keyboard shortcuts
 function setupKeyboardShortcuts() {
   window.addEventListener("keydown", (e) => {
-    if (e.key === "/" && document.activeElement.tagName !== "INPUT" && document.activeElement.tagName !== "TEXTAREA") {
+    const isModifierK = (e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K");
+    const isSlash = e.key === "/" && document.activeElement.tagName !== "INPUT" && document.activeElement.tagName !== "TEXTAREA";
+    if (isModifierK || isSlash) {
       e.preventDefault();
-      document.getElementById("global-search").focus();
+      const searchInput = document.getElementById("global-search");
+      if (searchInput) {
+        searchInput.focus();
+        if (typeof searchInput.select === "function") {
+          searchInput.select();
+        }
+      }
     }
     if (e.key === "Escape") {
       closeAuthModal();
@@ -319,15 +334,25 @@ function updateCategoryCounts() {
 
   const setCnt = (id, cat) => {
     const el = document.getElementById(id);
-    if (el) el.innerText = allProducts.filter((p) => (p.category || "").toLowerCase() === cat.toLowerCase()).length;
+    if (el) {
+      if (cat.toLowerCase() === "graphics card") {
+        el.innerText = allProducts.filter((p) => {
+          const c = (p.category || "").toLowerCase();
+          return c === "graphics card" || c === "gpu";
+        }).length;
+      } else {
+        el.innerText = allProducts.filter((p) => (p.category || "").toLowerCase() === cat.toLowerCase()).length;
+      }
+    }
   };
 
+  setCnt("count-processors", "Processor");
+  setCnt("count-gpus", "Graphics Card");
   setCnt("count-monitors", "Monitor");
   setCnt("count-ssds", "SSD");
   setCnt("count-laptops", "Laptop");
   setCnt("count-keyboards", "Keyboard");
   setCnt("count-mice", "Mouse");
-  setCnt("count-processors", "Processor");
 }
 
 // Populate Composer Dropdown
@@ -717,7 +742,11 @@ function applyFilters() {
 
   filteredProducts = allProducts.filter((p) => {
     const matchesSearch = !query || p.title.toLowerCase().includes(query) || p.vendor_name.toLowerCase().includes(query);
-    const matchesCategory = activeCategory === "ALL" || (p.category && p.category.toLowerCase() === activeCategory.toLowerCase());
+    const matchesCategory = activeCategory === "ALL" || (p.category && (
+      p.category.toLowerCase() === activeCategory.toLowerCase() ||
+      ((activeCategory.toLowerCase() === "graphics card" || activeCategory.toLowerCase() === "gpu") &&
+       (p.category.toLowerCase() === "graphics card" || p.category.toLowerCase() === "gpu"))
+    ));
     const matchesVendor = vendor === "ALL" || p.vendor_name.toLowerCase() === vendor.toLowerCase();
 
     // Stock availability filter
@@ -908,6 +937,12 @@ function getHardwareCategoryPlaceholder(category) {
   else if (cat.includes("keyboard")) { label = "KEYBOARD"; color = "%23f59e0b"; }
   else if (cat.includes("mouse")) { label = "MOUSE"; color = "%23ec4899"; }
   else if (cat.includes("processor") || cat.includes("cpu")) { label = "PROCESSOR"; color = "%23ef4444"; }
+  else if (cat.includes("graphics") || cat.includes("gpu")) { label = "GPU"; color = "%2310b981"; }
+  else if (cat.includes("motherboard") || cat.includes("board")) { label = "MOTHERBOARD"; color = "%236366f1"; }
+  else if (cat.includes("ram") || cat.includes("memory")) { label = "RAM"; color = "%238b5cf6"; }
+  else if (cat.includes("psu") || cat.includes("power supply")) { label = "PSU"; color = "%23eab308"; }
+  else if (cat.includes("casing") || cat.includes("case")) { label = "CASING"; color = "%2364748b"; }
+  else if (cat.includes("cooler")) { label = "COOLER"; color = "%2306b6d4"; }
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><rect width="160" height="160" fill="#0b0f14" rx="8"/><rect x="8" y="8" width="144" height="144" fill="#111821" stroke="#2a3745" stroke-dasharray="4" rx="6"/><text x="80" y="78" text-anchor="middle" fill="${color.replace('%23', '#')}" font-family="monospace" font-size="12" font-weight="bold">${label}</text><text x="80" y="98" text-anchor="middle" fill="#64748b" font-family="monospace" font-size="9">PREVIEW N/A</text></svg>`;
   return "data:image/svg+xml;base64," + btoa(svg);
@@ -1054,7 +1089,8 @@ function renderSingleCard(p) {
             </div>
             <div class="grid grid-cols-2 gap-1.5">
               ${p.storeVariants.slice(0, 4).map((v, idx) => {
-                const vPrice = Number(v.current_price);
+                const baseCash = Number(v.current_price);
+                const displayPrice = activePriceMode === "CARD" ? Math.round(baseCash * 1.07) : baseCash;
                 const isLowest = idx === 0;
                 const vUrl = buildAffiliateUrl(v.product_url, v.vendor_name);
                 return `
@@ -1070,7 +1106,7 @@ function renderSingleCard(p) {
                     class="flex items-center justify-between p-1.5 rounded-md bg-white border border-slate-200/80 hover:border-slate-400 transition text-[11px] group/item shadow-2xs"
                   >
                     <span class="truncate text-slate-700 font-medium group-hover/item:text-slate-900 mr-1">${escapeHtml(v.vendor_name.split(' ')[0])}</span>
-                    <span class="font-mono font-semibold ${isLowest ? 'text-slate-900 font-bold' : 'text-slate-600'}">৳${vPrice.toLocaleString('en-US')}</span>
+                    <span class="font-mono font-semibold ${isLowest ? 'text-slate-900 font-bold' : 'text-slate-600'}">৳${displayPrice.toLocaleString('en-US')}</span>
                   </a>
                 `;
               }).join("")}
@@ -1189,7 +1225,7 @@ function renderSingleCard(p) {
         <!-- Tab 1: Price Chart Panel -->
         <div id="insights-chart-panel-${escapeHtml(p.id)}" class="space-y-1">
           <div class="text-[11px] text-slate-500 font-medium">Verified Bangladesh Retail Price Trend (BDT)</div>
-          <div class="h-44 w-full">
+          <div id="insights-chart-container-${escapeHtml(p.id)}" class="h-44 w-full">
             <canvas id="canvas-chart-${escapeHtml(p.id)}"></canvas>
           </div>
         </div>
@@ -1309,7 +1345,12 @@ function openComparisonModal() {
       <div class="p-4 bg-white border border-slate-200 rounded-lg space-y-3 flex flex-col justify-between shadow-2xs">
         <div>
           <div class="h-32 bg-slate-50 rounded-md p-2 border border-slate-200 flex items-center justify-center mb-3">
-            <img src="${sanitizeUrl(item.image_url)}" alt="" class="max-h-full max-w-full object-contain" />
+            <img
+              src="${sanitizeUrl(item.image_url)}"
+              alt="${escapeHtml(item.title)}"
+              class="max-h-full max-w-full object-contain"
+              onerror="handleImageError(this, '${escapeHtml(item.category || '')}')"
+            />
           </div>
           <span class="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700 font-medium border border-slate-200">${escapeHtml(item.vendor_name)}</span>
           <h4 class="font-semibold text-slate-900 text-xs mt-2 line-clamp-2">${escapeHtml(item.title)}</h4>
@@ -1487,15 +1528,43 @@ function toggleCommentsInline(productId) {
 }
 
 function renderInlineChart(product) {
+  if (chartInstances[product.id]) {
+    chartInstances[product.id].destroy();
+    delete chartInstances[product.id];
+  }
+
+  const container = document.getElementById(`insights-chart-container-${product.id}`);
+  let history = product.price_history || [];
+
+  if (history.length === 0) {
+    if (container) {
+      container.innerHTML = `
+        <div class="h-full w-full flex flex-col items-center justify-center p-4 rounded-lg bg-slate-50 border border-dashed border-slate-200 text-center">
+          <div class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-400 mb-2">
+            <i data-lucide="line-chart" class="w-4 h-4"></i>
+          </div>
+          <span class="text-xs font-semibold text-slate-700 mb-1">Price Tracking Initiated</span>
+          <p class="text-[11px] text-slate-500 max-w-xs leading-relaxed">
+            Historical price movements will appear following scheduled store crawls.
+          </p>
+        </div>
+      `;
+      if (typeof lucide !== "undefined" && lucide.createIcons) {
+        lucide.createIcons();
+      }
+    }
+    return;
+  }
+
+  // Ensure canvas exists in case container was previously showing empty state
+  if (container && !document.getElementById(`canvas-chart-${product.id}`)) {
+    container.innerHTML = `<canvas id="canvas-chart-${escapeHtml(product.id)}"></canvas>`;
+  }
+
   const canvas = document.getElementById(`canvas-chart-${product.id}`);
   if (!canvas) return;
 
-  if (chartInstances[product.id]) {
-    chartInstances[product.id].destroy();
-  }
-
-  let history = product.price_history || [];
-  history.sort((a, b) => new Date(a.recorded_at) - new Date(b.recorded_at));
+  history = [...history].sort((a, b) => new Date(a.recorded_at) - new Date(b.recorded_at));
 
   if (history.length === 1) {
     const single = history[0];
@@ -1622,8 +1691,8 @@ async function loadProductComments(productId) {
 // Submit Inline Review
 async function submitInlineReview(productId) {
   const phoneInput = document.getElementById(`inline-phone-${productId}`);
-  let phone = phoneInput ? phoneInput.value.trim() : "";
-  if (!phone && currentUser) phone = currentUser.user_phone;
+  let phone = (phoneInput ? phoneInput.value : "").trim().replace(/[\s-]/g, "");
+  if (!phone && currentUser) phone = (currentUser.user_phone || "").trim().replace(/[\s-]/g, "");
 
   const nameInput = document.getElementById(`inline-name-${productId}`);
   let name = nameInput ? nameInput.value.trim() : "";
@@ -1657,7 +1726,14 @@ async function submitInlineReview(productId) {
     
     // Auto sync modal profile reviews if open
     if (currentUser && currentUser.username === name) {
-      loadProfileReviews(currentUser.user_phone);
+      if (typeof loadProfileReviews === "function") {
+        loadProfileReviews(currentUser.user_phone);
+      } else if (typeof openUserProfileModal === "function") {
+        const profileModal = document.getElementById("profile-modal");
+        if (profileModal && !profileModal.classList.contains("hidden")) {
+          openUserProfileModal(currentUser.username);
+        }
+      }
     }
   } catch (err) {
     showToast(`Failed: ${err.message}`);
@@ -1668,8 +1744,8 @@ async function submitInlineReview(productId) {
 async function submitComposerReview() {
   const productId = document.getElementById("composer-product-select").value;
   const phoneInput = document.getElementById("composer-phone");
-  let phone = phoneInput ? phoneInput.value.trim() : "";
-  if (!phone && currentUser) phone = currentUser.user_phone;
+  let phone = (phoneInput ? phoneInput.value : "").trim().replace(/[\s-]/g, "");
+  if (!phone && currentUser) phone = (currentUser.user_phone || "").trim().replace(/[\s-]/g, "");
 
   const nameInput = document.getElementById("composer-name");
   let name = nameInput ? nameInput.value.trim() : "";
@@ -2257,6 +2333,12 @@ function inferProductSocket(title) {
   if (/\bam4\b/.test(t)) return "AM4";
   if (/\blga\s*1851\b/.test(t)) return "LGA1851";
   if (/\blga\s*1700\b/.test(t)) return "LGA1700";
+  // Motherboard chipsets
+  if (/\b(b650|x670|a620|x870|b850|b840)\b/.test(t)) return "AM5";
+  if (/\b(b550|b450|x570|a520|x470|b350|a320)\b/.test(t)) return "AM4";
+  if (/\b(z890|b860|h810)\b/.test(t)) return "LGA1851";
+  if (/\b(z790|b760|h610|b660|z690|h670|h770)\b/.test(t)) return "LGA1700";
+  // CPU naming
   if (/\b(core\s*ultra|ultra\s*[579]).{0,24}\b2\d{2}[a-z]*\b/.test(t)) return "LGA1851";
   if (/\bryzen(?:\s*[3579])?\s*[789]\d{3}/.test(t)) return "AM5";
   if (/\bryzen(?:\s*[3579])?\s*[1-5]\d{3}/.test(t)) return "AM4";
@@ -2494,6 +2576,11 @@ async function handleDealUpvote(productId, buttonEl) {
     return;
   }
 
+  const lockKey = `deal:${productId}`;
+  if (activeUpvoteLocks.has(lockKey)) return;
+  activeUpvoteLocks.add(lockKey);
+  if (buttonEl) buttonEl.disabled = true;
+
   const isUpvoted = userUpvotedSet.has(productId);
   if (isUpvoted) {
     userUpvotedSet.delete(productId);
@@ -2504,30 +2591,49 @@ async function handleDealUpvote(productId, buttonEl) {
   localStorage.setItem("tp_upvoted_deals", JSON.stringify([...userUpvotedSet]));
 
   try {
-    const { data } = await sb.rpc("toggle_deal_upvote", {
+    const { data, error } = await sb.rpc("toggle_deal_upvote", {
       p_product_id: productId,
       p_user_phone: currentUser.user_phone,
     });
+    if (error) throw error;
 
-    if (data) {
+    if (data && buttonEl) {
       const countEl = buttonEl.querySelector("span");
       if (countEl) countEl.innerText = `${data.total_upvotes} Upvotes`;
-      buttonEl.classList.toggle("text-emerald-400", data.upvoted);
-      buttonEl.classList.toggle("border-emerald-800", data.upvoted);
+      buttonEl.classList.toggle("text-emerald-700", data.upvoted);
+      buttonEl.classList.toggle("bg-emerald-50", data.upvoted);
+      buttonEl.classList.toggle("border-emerald-300", data.upvoted);
       showToast(data.upvoted ? "Deal upvoted" : "Upvote removed");
     }
   } catch (err) {
-    showToast("Upvote recorded locally.");
+    // Revert local optimistic state if server failed
+    if (isUpvoted) {
+      userUpvotedSet.add(productId);
+    } else {
+      userUpvotedSet.delete(productId);
+    }
+    localStorage.setItem("tp_upvoted_deals", JSON.stringify([...userUpvotedSet]));
+    showToast(`Upvote failed: ${err.message || 'Error recording vote'}`);
+  } finally {
+    activeUpvoteLocks.delete(lockKey);
+    if (buttonEl) buttonEl.disabled = false;
   }
 }
 
 // Upvote Community Post (Atomic & Fraud Protected)
-async function handlePostUpvote(postId) {
+async function handlePostUpvote(postId, buttonEl = null) {
   if (!currentUser) {
     openAuthModal();
     showToast("Please sign in with your phone to upvote discussions.");
     return;
   }
+
+  const lockKey = `post:${postId}`;
+  if (activeUpvoteLocks.has(lockKey)) return;
+  activeUpvoteLocks.add(lockKey);
+
+  const btn = buttonEl || document.querySelector(`button[data-action="upvote-post"][data-id="${postId}"]`);
+  if (btn) btn.disabled = true;
 
   try {
     const { data, error } = await sb.rpc("toggle_post_upvote", {
@@ -2544,6 +2650,9 @@ async function handlePostUpvote(postId) {
     }
   } catch (err) {
     showToast(`Vote error: ${err.message}`);
+  } finally {
+    activeUpvoteLocks.delete(lockKey);
+    if (btn) btn.disabled = false;
   }
 }
 
@@ -2743,12 +2852,24 @@ function handleAddToBuild(productId) {
   const cat = (item.category || "").toLowerCase();
   const title = item.title.toLowerCase();
 
-  if (cat === "processor" || title.includes("processor") || title.includes("ryzen") || title.includes("intel")) {
+  if (cat === "processor" || cat === "cpu" || title.includes("processor") || title.includes("ryzen") || title.includes("intel core") || title.includes("core ultra")) {
     slot = "Processor";
-  } else if (cat === "monitor") {
-    slot = "Monitor";
-  } else if (cat === "ssd" || title.includes("ssd") || title.includes("nvme")) {
+  } else if (cat === "motherboard" || title.includes("motherboard") || title.includes("mainboard")) {
+    slot = "Motherboard";
+  } else if (cat === "ram" || cat === "memory" || title.includes("ddr4") || title.includes("ddr5") || title.includes("ram") || title.includes("desktop memory")) {
+    slot = "RAM";
+  } else if (cat === "gpu" || cat === "graphics card" || title.includes("graphics card") || title.includes("geforce") || title.includes("radeon") || title.includes("rtx ") || title.includes("rx ")) {
+    slot = "GPU";
+  } else if (cat === "ssd" || cat === "storage" || cat === "hard drive" || title.includes("ssd") || title.includes("nvme") || title.includes("hard drive")) {
     slot = "Storage";
+  } else if (cat === "psu" || cat === "power supply" || title.includes("power supply") || title.includes("psu")) {
+    slot = "PSU";
+  } else if (cat === "casing" || cat === "case" || title.includes("casing") || title.includes("gaming case") || title.includes("chassis")) {
+    slot = "Casing";
+  } else if (cat === "cooler" || cat === "cooling" || title.includes("cooler") || title.includes("liquid cooler") || title.includes("cpu cooler") || title.includes("fan")) {
+    slot = "Cooler";
+  } else if (cat === "monitor" || title.includes("monitor") || title.includes("display")) {
+    slot = "Monitor";
   } else if (cat === "laptop") {
     slot = "Laptop";
   } else if (cat === "keyboard") {
@@ -2767,8 +2888,8 @@ function handleAddToBuild(productId) {
 }
 
 function handleRemoveFromBuild(slotKey) {
-  if (buildLabSlots[slotKey]) {
-    delete buildLabSlots[slotKey];
+  if (buildLabSlots[slotKey] !== undefined) {
+    buildLabSlots[slotKey] = null;
     saveBuildLabToStorage();
     updateBuildNavCount();
     showToast(`Removed from Build: ${slotKey}`);
@@ -2831,12 +2952,18 @@ function renderBuildLab() {
   if (!slotsContainer) return;
 
   const defaultSlots = [
-    { key: "Processor", label: "Processor (CPU)", icon: "cpu" },
-    { key: "Storage", label: "Storage (SSD/NVMe)", icon: "hard-drive" },
-    { key: "Monitor", label: "Monitor (Display)", icon: "monitor" },
-    { key: "Keyboard", label: "Keyboard", icon: "keyboard" },
-    { key: "Mouse", label: "Mouse", icon: "mouse" },
-    { key: "Laptop", label: "Portable Rig / Laptop", icon: "laptop" },
+    { key: "Processor", label: "Processor (CPU)", icon: "cpu", defaultCat: "Processor" },
+    { key: "Motherboard", label: "Motherboard", icon: "circuit-board", defaultCat: "Motherboard" },
+    { key: "RAM", label: "Memory (RAM)", icon: "database", defaultCat: "RAM" },
+    { key: "GPU", label: "Graphics Card (GPU)", icon: "activity", defaultCat: "Graphics Card" },
+    { key: "Storage", label: "Storage (SSD/NVMe)", icon: "hard-drive", defaultCat: "SSD" },
+    { key: "PSU", label: "Power Supply (PSU)", icon: "zap", defaultCat: "Power Supply" },
+    { key: "Casing", label: "Casing (Chassis)", icon: "box", defaultCat: "Casing" },
+    { key: "Cooler", label: "CPU Cooler", icon: "wind", defaultCat: "Cooler" },
+    { key: "Monitor", label: "Monitor (Display)", icon: "monitor", defaultCat: "Monitor" },
+    { key: "Keyboard", label: "Keyboard", icon: "keyboard", defaultCat: "Keyboard" },
+    { key: "Mouse", label: "Mouse", icon: "mouse", defaultCat: "Mouse" },
+    { key: "Laptop", label: "Portable Rig / Laptop", icon: "laptop", defaultCat: "Laptop" },
   ];
 
   let grandTotal = 0;
@@ -2889,7 +3016,7 @@ function renderBuildLab() {
             </span>
             <span class="text-xs">No component selected for this slot</span>
           </div>
-          <button data-action="choose-build-slot" data-category="${slot.key === 'Storage' ? 'SSD' : slot.key}" class="px-2.5 py-1 rounded bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-medium transition shadow-2xs">
+          <button data-action="choose-build-slot" data-category="${slot.defaultCat || slot.key}" class="px-2.5 py-1 rounded bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-medium transition shadow-2xs">
             + Choose ${slot.label.split(" ")[0]}
           </button>
         </div>
@@ -2900,25 +3027,171 @@ function renderBuildLab() {
   slotsContainer.innerHTML = html;
   if (totalPriceEl) totalPriceEl.innerText = `৳ ${grandTotal.toLocaleString()}`;
 
-  // Basic Socket / Spec Compatibility Checks
+  // Basic Socket / Spec Compatibility Checks & PSU Wattage Calculation
   if (compatText && compatBox) {
     if (activeSlotsCount === 0) {
       compatText.innerText = "Select components from the catalog to run live socket, power, and dimensional checks.";
-      compatBox.className = "p-3 rounded-md bg-slate-50 border border-slate-200 text-xs flex items-start space-x-2.5 text-slate-500";
+      compatBox.className = "p-2.5 rounded-md bg-slate-50 border border-slate-200 text-xs flex items-start space-x-2 text-slate-500";
     } else {
       const cpu = buildLabSlots["Processor"];
+      const mb = buildLabSlots["Motherboard"];
+      const ram = buildLabSlots["RAM"];
+      const gpu = buildLabSlots["GPU"];
+      const psu = buildLabSlots["PSU"];
+
+      // Socket deduction
+      const cpuSocket = cpu ? inferProductSocket(cpu.title) : null;
+      const mbSocket = mb ? inferProductSocket(mb.title) : null;
+
+      // RAM generation deduction
+      let ramGen = null;
+      if (ram) {
+        const ramT = (ram.title || "").toLowerCase();
+        if (ramT.includes("ddr5")) ramGen = "DDR5";
+        else if (ramT.includes("ddr4")) ramGen = "DDR4";
+        else if (ramT.includes("ddr3")) ramGen = "DDR3";
+      }
+
+      // Collect compatibility conflicts and positive matches
+      const conflicts = [];
+      const verifications = [];
+
+      // 1. CPU vs Motherboard socket check
+      if (cpuSocket && mbSocket) {
+        if (cpuSocket !== mbSocket) {
+          conflicts.push(`Socket Mismatch: CPU is ${cpuSocket} but Motherboard is ${mbSocket}. They are physically incompatible.`);
+        } else {
+          verifications.push(`Socket Match: CPU & Motherboard compatible (${cpuSocket}).`);
+        }
+      } else if (cpuSocket && !mbSocket && mb) {
+        verifications.push(`CPU is ${cpuSocket} (Verify motherboard socket).`);
+      } else if (!cpuSocket && mbSocket && cpu) {
+        verifications.push(`Motherboard is ${mbSocket} (Verify CPU socket).`);
+      } else if (cpuSocket) {
+        verifications.push(`CPU Socket: ${cpuSocket}.`);
+      }
+
+      // 2. RAM Generation vs Motherboard / CPU Socket check
+      const boardOrCpuSocket = mbSocket || cpuSocket;
+      if (ramGen && boardOrCpuSocket) {
+        if (boardOrCpuSocket === "AM5" && ramGen !== "DDR5") {
+          conflicts.push(`Memory Conflict: AMD AM5 platform strictly requires DDR5 memory (${ramGen} slotted).`);
+        } else if (boardOrCpuSocket === "AM4" && ramGen !== "DDR4") {
+          conflicts.push(`Memory Conflict: AMD AM4 platform strictly requires DDR4 memory (${ramGen} slotted).`);
+        } else if (boardOrCpuSocket === "LGA1851" && ramGen !== "DDR5") {
+          conflicts.push(`Memory Conflict: Intel LGA1851 platform strictly requires DDR5 memory (${ramGen} slotted).`);
+        } else if (boardOrCpuSocket === "LGA1700") {
+          // LGA1700 can use DDR4 or DDR5 depending on board
+          if (mb) {
+            const mbT = mb.title.toLowerCase();
+            const mbDdr5 = mbT.includes("ddr5");
+            const mbDdr4 = mbT.includes("ddr4") || mbT.includes("d4");
+            if (mbDdr5 && ramGen === "DDR4") {
+              conflicts.push(`Memory Conflict: Slotted motherboard is DDR5 but slotted RAM is DDR4.`);
+            } else if (mbDdr4 && ramGen === "DDR5") {
+              conflicts.push(`Memory Conflict: Slotted motherboard is DDR4/D4 but slotted RAM is DDR5.`);
+            } else {
+              verifications.push(`Memory Match: ${ramGen} on LGA1700.`);
+            }
+          } else {
+            verifications.push(`Memory: ${ramGen} (Ensure chosen LGA1700 motherboard supports ${ramGen}).`);
+          }
+        } else if (ramGen) {
+          verifications.push(`Memory: ${ramGen} slotted.`);
+        }
+      } else if (ramGen) {
+        verifications.push(`Memory: ${ramGen} slotted.`);
+      }
+
+      // 3. PSU Wattage & TDP Calculator
+      // Estimation rules: CPU TDP + GPU TDP + 80W overhead.
+      let cpuTdp = 0;
       if (cpu) {
-        const titleL = cpu.title.toLowerCase();
-        let socket = "Universal / Not Specified";
-        if (titleL.includes("am5")) socket = "AMD AM5 (Requires DDR5 & AM5 Board)";
-        else if (titleL.includes("am4")) socket = "AMD AM4 (Requires DDR4 & AM4 Board)";
-        else if (titleL.includes("lga1700") || titleL.includes("lga 1700")) socket = "Intel LGA1700 (12th/13th/14th Gen)";
-        
-        compatText.innerHTML = `<span class="text-slate-900 font-semibold">Verified Socket:</span> ${socket}. All chosen items are in stock across verified Bangladesh stores.`;
-        compatBox.className = "p-2.5 rounded-md bg-slate-100/60 border border-slate-200 text-xs flex items-start space-x-2 text-slate-700";
+        const t = cpu.title.toLowerCase();
+        if (/\b(13900|14900|12900|7950x3d|7950x|9950x)\b/.test(t)) cpuTdp = 170;
+        else if (/\b(13700|14700|12700|7900x|9900x|7800x3d|9800x3d)\b/.test(t)) cpuTdp = 125;
+        else if (/\b(13600|14600|12600|7700x|7600x|9700x|9600x)\b/.test(t)) cpuTdp = 105;
+        else if (/\b(ultra\s*[79]|265k|285k)\b/.test(t)) cpuTdp = 125;
+        else if (/\b(ultra\s*5|245k)\b/.test(t)) cpuTdp = 105;
+        else cpuTdp = 65; // Standard 65W for Ryzen 5 5600, 7600, i5-12400, etc.
+      }
+
+      let gpuTdp = 0;
+      if (gpu) {
+        const t = gpu.title.toLowerCase();
+        if (/\b(rtx\s*4090|3090\s*ti)\b/.test(t)) gpuTdp = 450;
+        else if (/\b(rtx\s*4080|rx\s*7900\s*xtx)\b/.test(t)) gpuTdp = 320;
+        else if (/\b(rx\s*7900\s*xt|rtx\s*3080|rtx\s*4070\s*ti)\b/.test(t)) gpuTdp = 285;
+        else if (/\b(rtx\s*4070|rx\s*7800\s*xt)\b/.test(t)) gpuTdp = 200;
+        else if (/\b(rtx\s*4060\s*ti|rx\s*7700\s*xt)\b/.test(t)) gpuTdp = 160;
+        else if (/\b(rtx\s*4060|rx\s*7600|rtx\s*3060)\b/.test(t)) gpuTdp = 115;
+        else gpuTdp = 150; // Generic dedicated GPU fallback
+      }
+
+      // Overhead is 80W (Motherboard, RAM, SSD, Fans, Peripherals)
+      const overheadW = (cpu || gpu) ? 80 : 0;
+      const estimatedDraw = cpuTdp + gpuTdp + overheadW;
+      // Recommended PSU: rounded up to nearest safe tier (estimatedDraw * 1.35 or minimum 450W if GPU present, min 350W otherwise)
+      let recommendedPsu = 0;
+      if (estimatedDraw > 0) {
+        const rawTarget = Math.max(350, Math.round((estimatedDraw * 1.35) / 50) * 50);
+        recommendedPsu = rawTarget;
+      }
+
+      // PSU slotted rating check
+      let psuWarning = null;
+      let slottedPsuW = 0;
+      if (psu) {
+        const psuMatch = (psu.title || "").match(/\b(\d{3,4})\s*(?:w|watt|watts)\b/i);
+        if (psuMatch) {
+          slottedPsuW = parseInt(psuMatch[1], 10);
+          if (recommendedPsu > 0 && slottedPsuW < recommendedPsu) {
+            psuWarning = `Underpowered PSU: Slotted PSU is rated for ${slottedPsuW}W, but recommended PSU is ${recommendedPsu}W for this configuration.`;
+          }
+        }
+      }
+
+      const psuMetricsText = estimatedDraw > 0
+        ? `⚡ Estimated Draw: ${estimatedDraw} W | Recommended PSU: ${recommendedPsu} W`
+        : "";
+
+      // Render banner state
+      if (conflicts.length > 0) {
+        compatBox.className = "p-3 rounded-md bg-rose-50 border border-rose-300 text-xs flex items-start space-x-2 text-rose-800";
+        compatText.innerHTML = `
+          <div>
+            <div class="font-bold flex items-center space-x-1 mb-1">
+              <span>⚠️ Hardware Incompatibility Detected</span>
+            </div>
+            <ul class="list-disc pl-4 space-y-0.5 text-rose-700">
+              ${conflicts.map(c => `<li>${escapeHtml(c)}</li>`).join("")}
+            </ul>
+            ${psuMetricsText ? `<div class="mt-1.5 pt-1.5 border-t border-rose-200 font-mono text-[11px] text-rose-900">${psuMetricsText}</div>` : ""}
+            ${psuWarning ? `<div class="text-[11px] text-amber-700 font-medium mt-0.5">⚠️ ${escapeHtml(psuWarning)}</div>` : ""}
+          </div>
+        `;
+      } else if (psuWarning) {
+        compatBox.className = "p-3 rounded-md bg-amber-50 border border-amber-300 text-xs flex items-start space-x-2 text-amber-900";
+        compatText.innerHTML = `
+          <div>
+            <div class="font-bold mb-1">⚠️ Power Advisory</div>
+            <div class="text-amber-800">${escapeHtml(psuWarning)}</div>
+            ${verifications.length > 0 ? `<div class="text-amber-700 text-[11px] mt-1">${verifications.join(" • ")}</div>` : ""}
+            <div class="mt-1.5 pt-1.5 border-t border-amber-200 font-mono text-[11px] font-semibold text-amber-900">${psuMetricsText}</div>
+          </div>
+        `;
       } else {
-        compatText.innerText = "Components slotted successfully. No electrical or dimensional conflicts detected.";
-        compatBox.className = "p-3 rounded-md bg-slate-50 border border-slate-200 text-xs flex items-start space-x-2.5 text-slate-700";
+        compatBox.className = "p-3 rounded-md bg-emerald-50 border border-emerald-300 text-xs flex items-start space-x-2 text-emerald-800";
+        const details = verifications.length > 0 ? verifications.join(" • ") : "No hardware conflicts detected across slotted components.";
+        compatText.innerHTML = `
+          <div>
+            <div class="font-semibold text-emerald-900 flex items-center space-x-1.5 mb-0.5">
+              <span>✓ All Slotted Components Compatible</span>
+            </div>
+            <div class="text-emerald-700">${escapeHtml(details)}</div>
+            ${psuMetricsText ? `<div class="mt-1.5 pt-1.5 border-t border-emerald-200/80 font-mono text-[11px] font-semibold text-emerald-950">${psuMetricsText}</div>` : ""}
+          </div>
+        `;
       }
     }
   }
@@ -2992,6 +3265,7 @@ let toastTimeout;
 function showToast(msg) {
   const toast = document.getElementById("toast");
   const label = document.getElementById("toast-message");
+  if (!label || !toast) return;
   label.innerText = msg;
   toast.classList.remove("translate-y-16", "opacity-0");
   clearTimeout(toastTimeout);
