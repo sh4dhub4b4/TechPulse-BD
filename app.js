@@ -338,7 +338,8 @@ function updateCategoryCounts() {
       if (cat.toLowerCase() === "graphics card") {
         el.innerText = allProducts.filter((p) => {
           const c = (p.category || "").toLowerCase();
-          return c === "graphics card" || c === "gpu";
+          const t = (p.title || "").toLowerCase();
+          return c === "graphics card" || c === "gpu" || t.includes("geforce") || t.includes("rtx ") || t.includes("radeon") || t.includes("rx ") || t.includes("graphics card");
         }).length;
       } else {
         el.innerText = allProducts.filter((p) => (p.category || "").toLowerCase() === cat.toLowerCase()).length;
@@ -742,10 +743,18 @@ function applyFilters() {
 
   filteredProducts = allProducts.filter((p) => {
     const matchesSearch = !query || p.title.toLowerCase().includes(query) || p.vendor_name.toLowerCase().includes(query);
+    const isGpuFilter = activeCategory.toLowerCase() === "graphics card" || activeCategory.toLowerCase() === "gpu";
     const matchesCategory = activeCategory === "ALL" || (p.category && (
       p.category.toLowerCase() === activeCategory.toLowerCase() ||
-      ((activeCategory.toLowerCase() === "graphics card" || activeCategory.toLowerCase() === "gpu") &&
-       (p.category.toLowerCase() === "graphics card" || p.category.toLowerCase() === "gpu"))
+      (isGpuFilter && (
+        (p.category || "").toLowerCase() === "graphics card" ||
+        (p.category || "").toLowerCase() === "gpu" ||
+        (p.title || "").toLowerCase().includes("geforce") ||
+        (p.title || "").toLowerCase().includes("rtx ") ||
+        (p.title || "").toLowerCase().includes("radeon") ||
+        (p.title || "").toLowerCase().includes("rx ") ||
+        (p.title || "").toLowerCase().includes("graphics card")
+      ))
     ));
     const matchesVendor = vendor === "ALL" || p.vendor_name.toLowerCase() === vendor.toLowerCase();
 
