@@ -30,6 +30,27 @@ const FIXTURE = `<!doctype html>
     <div id="pulse-updated-24h"></div>
     <div id="pulse-velocity-1h"></div>
     <div id="pulse-active-users"></div>
+
+    <!-- Category Pills & Header Count -->
+    <span id="header-product-count"></span>
+    <span id="count-processors"></span>
+    <span id="count-gpus"></span>
+    <span id="count-monitors"></span>
+    <span id="count-ssds"></span>
+    <span id="count-laptops"></span>
+    <span id="count-keyboards"></span>
+    <span id="count-mice"></span>
+    <div id="comparison-grid"></div>
+    <div id="hardware-feed"></div>
+
+    <!-- Build Lab Elements -->
+    <div id="build-lab-view">
+      <div id="build-lab-total-price"></div>
+      <div id="build-compatibility-box"></div>
+      <span id="build-compatibility-text"></span>
+      <div id="build-lab-slots"></div>
+      <span id="nav-build-count"></span>
+    </div>
   </body>
 </html>`;
 
@@ -186,7 +207,23 @@ ${source}
   setModalScrollLock,
   openReviewModal,
   closeReviewModal,
-  setupKeyboardShortcuts
+  setupKeyboardShortcuts,
+  updateCategoryCounts,
+  setPriceComparisonMode,
+  renderInlineChart,
+  openComparisonModal,
+  renderSingleCard,
+  handleImageError,
+  getHardwareCategoryPlaceholder,
+  get activePriceMode() { return activePriceMode; },
+  set activePriceMode(v) { activePriceMode = v; },
+  get comparisonTray() { return comparisonTray; },
+  get chartInstances() { return chartInstances; },
+  handleAddToBuild,
+  handleRemoveFromBuild,
+  clearCurrentBuild,
+  renderBuildLab,
+  saveBuildLabToStorage
 };
 })()`);
   } finally {
